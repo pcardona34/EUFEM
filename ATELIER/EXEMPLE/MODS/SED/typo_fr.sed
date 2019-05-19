@@ -5,11 +5,11 @@
 s/ "/ \&laquo;\&nbsp;/g
 s/ \*"/ *\&laquo;\&nbsp;/g
 s/ \*\*"/ \*\*\&laquo;\&nbsp;/g
-s/ _"/ _\&laquo;\&nbsp;/g
+s/ \_"/ \_\&laquo;\&nbsp;/g
 
 # Guillemets fermants
 
-s/"/\&nbsp;\&raquo; /g
+s/"/\&nbsp;\&raquo;/g
 
 # Signes de ponctuation composés ":" et ";"
 

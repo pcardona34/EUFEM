@@ -13,14 +13,16 @@ Pour en savoir plus, consultez l'aide :
 + Pour démarrer la chaîne éditoriale EUFEM, ouvrez un terminal et 
 saisissez la commande :
 
-	./menu.sh
+    ./menu.sh
 
 + Au besoin, rétablissez les permissions afin de rendre exécutables  les scripts.  
 Par exemple :
 
-	chmod +x menu.sh
-	chmod +x SCRIPTS/*.sh
-	chmod +x ATELIER/<NOM_ATELIER_COURANT>/MODS/*.sh
+    chmod +x menu.sh
+	
+    chmod +x SCRIPTS/*.sh
+	
+    chmod +x ATELIER/<NOM_ATELIER_COURANT>/MODS/*.sh
 
 # Installation
 
@@ -30,6 +32,4 @@ EUFEM utilise des scripts Bash, ainsi que des programmes tels que
 + IMPORTANT : vérifiez la conformité de l'installation de votre système 
 en consultant le fichier d'aide à l'installation d'Eufem : 
 
-	menu / Aide / (I)nstallation 
-
-
+    menu / Aide / (I)nstallation 
