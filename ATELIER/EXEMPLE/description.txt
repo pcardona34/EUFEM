@@ -1,0 +1,29 @@
+Activité : cours
+Matière : Littérature
+Sorties générées : une présentation (diaporama PDF), une prise de notes complète et une version trouée.
+
+Champs spécifiques :
+Ce cours est décrit dans le fichier champs.ini au moyen de champs spécifiques :
+
+TITRE : c'est aussi celui de l'œuvre étudiée
+
+OBJET_COURT : version abrégée de l'objet d'étude, par exemple "POÉSIE"
+
+NUM_SEQUENCE : numérotation de la séquence au sein du descriptif annuel
+
+OBJET_LONG : intitulé complet de l'objet d'étude, par exemple : 
+"Écriture poétique et quête du sens du Moyen Âge à nos jours"
+
+Les champs suivants composent la référence du texte étudié :
+
+AUTEUR, TITRE (de l'œuvre ou du recueil), DETAIL
+Ce dernier champ peut préciser un chapitre, le titre d'un poème, 
+d'une nouvelle, la scène et l'acte, etc.
+
+REF_DESC : ce champ indique le numéro de référence dans le descriptif, 
+par exemple : LA_13 (lecture analytique 13) ou A (texte A des lectures
+complémentaires)
+
+ACTIVITE : "Lecture analytique" ou "Lecture complémentaire"...
+
+Appuyez sur la touche <q> pour refermer cette description.

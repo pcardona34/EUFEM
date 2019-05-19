@@ -1,0 +1,8 @@
+Ne placez pas vos images ici, mais dans le dossier racine
+ IMG de EUFEM : `EUFEM/IMG`
+Puis utilisez la commande :
+
+	menu / Edition / propager les images...
+
+Cette procédure évite les liens rompus 
+dans les éditeurs tels que Abricotine...

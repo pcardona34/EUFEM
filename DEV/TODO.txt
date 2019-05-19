@@ -1,0 +1,6 @@
+Encore à faire :
+
++ Créer modèle générique, moins dépendant des objets littéraires
++ Modèles pédagogiques : littérature, méthode, étude de la langue
++ Modèles en BTS : à faire
++ Améliorer les templates : utilisation de Yaml, pandoc-mustache

@@ -1,0 +1,8 @@
+\usepackage{framed}
+\let\oldquote=\quote
+\let\endoldquote=\endquote
+\renewenvironment{quote}{\begin{framed}\begin{oldquote}\color{blue}}{\end{oldquote}\end{framed}}
+\let\oldemph\emph
+\renewcommand\emph[1]{{\color{blue}\oldemph{#1}}}
+
+
