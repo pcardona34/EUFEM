@@ -5,7 +5,7 @@
 source CONF/atelier.ini
 
 if test -d IMG
-	then cp -u -v IMG/* ATELIER/${ATELIER}/SOURCE/IMG
+	then cp -u -v --recursive IMG/* ATELIER/${ATELIER}/SOURCE/IMG
 	echo "Images propagées. Vous pouvez reprendre ou commencer l'édition."
 	sleep 2
 else

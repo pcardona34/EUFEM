@@ -2,26 +2,26 @@
 
 # Variables...
 source CONF/atelier.ini
+source CONF/prefs.ini
 
-FIC=ATELIER/${ATELIER}/presentation_${ATELIER}.pdf
+PDFS=ATELIER/${ATELIER}
 
-if test -f $FIC;then ${VISIONPDF} $FIC
-else
-	echo "Il faut créer ${FIC}";
+# On vérifie l'existence de fichiers PDF
+ls ${PDFS}/*.pdf
+if ! [ "$?" = "0" ]
+then whiptail --title "Erreur" --msgbox "Aucun fichier PDF !" 10 60
+exit 1
 fi
 
-PN=ATELIER/${ATELIER}/prise_de_notes_${ATELIER}_COMPLETE.pdf
-PNT=ATELIER/${ATELIER}/prise_de_notes_${ATELIER}_TROUEE.pdf
-
-for pn in ${PN} ${PNT}
-do 
-	if test -f $pn;then ${VISIONPDF} $pn
-	# 2>/dev/null
-		else
-			echo "Il faut créer ${pn}";
-	fi
-done
-
-
+# On vérifie la visionneuse PDF
+if test -n "$VISIONPDF" && test -f "$VISIONPDF"
+then
+	for pdf in ${PDFS}/*.pdf
+	do
+	${VISIONPDF} --unique $pdf 2>/dev/null
+	done
+else
+	whiptail --title "Erreur" --msgbox "Aucune visionneuse PDF. Vérifiez vos préférences." 10 60; exit 1
+fi
 
 

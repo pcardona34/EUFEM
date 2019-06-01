@@ -1,0 +1,19 @@
++ Activité : Lecture complémentaire
++ Matière : Littérature
+
+Sorties générées :
+
++ Un corpus de poèmes (PDF papier, A4) 
+
+Champs spécifiques :
+
+Ce cours est décrit dans le fichier champs.ini  
+ au moyen de champs spécifiques :
+
+| Champ        | Valeur                             |
+| ------------ | ---------------------------------- |
+| OBJET_COURT  | Objet d'étude abrégé (POÉSIE)      |
+| NUM_SEQUENCE | Numéro de la séquence              |
+| ACTIVITE     | Description de l'activité
+
+Appuyez sur la touche <q> pour refermer cette description.

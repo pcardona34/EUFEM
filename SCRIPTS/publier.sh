@@ -4,7 +4,7 @@
 
 source CONF/atelier.ini
 
-if ! test -d ${FORGE}
+if ! test -d "${FORGE}"
 then
 	mkdir -p ${FORGE}
 fi
@@ -21,12 +21,8 @@ then
 	mkdir -p ${DEST}
 fi
 
-clear
-echo "Destination des PDF : ${DEST}"
-echo "Une copie des versions papier sera effectuée dans ${FORGE}/${IMPRESSION}"
-
 cp -u -v ATELIER/${ATELIER}/*.pdf ${DEST}
 cp -u -v ATELIER/${ATELIER}/prise_de_notes*.pdf ${FORGE}/${IMPRESSION}
 
-echo -e "\nFin de la publication"
-sleep 3
+whiptail --title "Publication" --msgbox "Les PDF ont été copiés dans ${DEST} ainsi qu'une copie des versions papier dans ${FORGE}/${IMPRESSION}" 12 60
+

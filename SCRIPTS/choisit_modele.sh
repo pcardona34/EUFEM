@@ -78,12 +78,12 @@ if [ $exitstatus -eq 0 ]; then
     if [ "$selection" == "" ]; then
         echo "L'utilisateur a pressé la touche Esc sans sélection de fichier"
     else
-        whiptail --title "Un fichier a été sélectionné" --msgbox " \
-        Information sur le fichier sélectionné
-        Nom : $filename
-        Dossier : $filepath
-        \
-        " 0 0 0
+        #whiptail --title "Un fichier a été sélectionné" --msgbox " \
+        #Information sur le fichier sélectionné
+        #Nom : $filename
+        #Dossier : $filepath
+        #\
+        #" 0 0 0
 		
 	cd ..
 	SCRIPTS/restaure_modele.sh $filename

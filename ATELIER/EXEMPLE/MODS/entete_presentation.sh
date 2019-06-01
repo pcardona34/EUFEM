@@ -19,20 +19,6 @@ CIBLE=ATELIER/${ATELIER}/SOURCE/ENTETE_PRESENTATION.md
 
 # On écrit l'en-tête
 echo "% ${TITRE}  " > $CIBLE
-echo "% ${OBJET_COURT}  " >> $CIBLE
+echo "% ${ACTIVITE}  " >> $CIBLE
 echo "% $(date +"%d %b %Y")  " >> $CIBLE
-
-echo -e "## Référence  \n" >> $CIBLE
-
-echo "+ Séquence ${NUM_SEQUENCE}  " >> $CIBLE
-
-echo "+ OBJET D'ÉTUDE : ${OBJET_LONG}  " >> $CIBLE
-
-echo -e "+ ${AUTEUR}, _${TITRE}_, ${DETAIL}  \n" >> $CIBLE
-
-echo "|Référence dans le descriptif|Modalité de lecture|  " >> $CIBLE
-echo "|---|---|  " >> $CIBLE
-echo "|Réf. ${REF_DESC}, page ${NUM_SEQUENCE}|${ACTIVITE}|  " >> $CIBLE
-
-
 

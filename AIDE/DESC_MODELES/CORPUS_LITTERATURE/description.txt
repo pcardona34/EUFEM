@@ -1,0 +1,18 @@
++ Activité : Lecture complémentaire
++ Matière : Littérature
+
+Sorties générées :
+
++ Un corpus de textes (PDF papier, A4) 
+
+Champs spécifiques :
+
+Ce cours est décrit dans le fichier champs.ini  
+ au moyen de champs spécifiques :
+
+| Champ        | Valeur                             |
+| ------------ | ---------------------------------- |
+| OBJET_COURT  | Objet d'étude abrégé               |
+| NUM_SEQUENCE | Numéro de la séquence              |
+
+Appuyez sur la touche <q> pour refermer cette description.
