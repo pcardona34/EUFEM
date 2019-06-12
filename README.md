@@ -13,13 +13,13 @@ Pour en savoir plus, consultez l'aide :
 + Pour démarrer la chaîne éditoriale EUFEM, ouvrez un terminal et 
 saisissez la commande :
 
-	/bin/bash ./eufem.sh
+		/bin/bash ./eufem.sh
 
 + Ou bien, après avoir rendu ce script exécutable :
 
-	chmod +x eufem.sh
+		chmod +x eufem.sh
 	
-	./eufem.sh	
+		./eufem.sh	
 
 # Installation
 
@@ -28,4 +28,4 @@ EUFEM utilise des scripts Bash, ainsi que des programmes tels que
 
 + Pour installer toutes les dépendances :
 
-	sudo /bin/bash SCRIPTS/install.sh
+		sudo /bin/bash SCRIPTS/install.sh
