@@ -6,7 +6,5 @@
 for m in MODELES/*.tar
 do
 	desc=$(basename $m)
-	clear	
-	echo "Modèle : ${desc%.*}"	
-	SCRIPTS/info_modele.sh ${desc%.*}
-done 
+	/bin/bash SCRIPTS/info_modele.sh ${desc%.*}
+done

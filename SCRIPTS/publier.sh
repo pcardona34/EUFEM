@@ -4,6 +4,17 @@
 
 source CONF/atelier.ini
 
+PDFS=ATELIER/${ATELIER}
+
+# On vérifie l'existence de fichiers PDF
+ls ${PDFS}/*.pdf
+if ! [ "$?" = "0" ]
+then whiptail --title "Erreur" --msgbox "Aucun fichier PDF !" 10 60
+exit 1
+fi
+
+# Il y a des PDF : on peut continuer...
+
 if ! test -d "${FORGE}"
 then
 	mkdir -p ${FORGE}

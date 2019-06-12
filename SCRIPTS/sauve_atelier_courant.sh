@@ -1,11 +1,10 @@
 #!/bin/bash
 
 COURANT=$1
-if ! test -d ATELIER/${COURANT}
+if ! test -d "ATELIER/$COURANT"
 then
-	echo "ERREUR : l'atelier ${COURANT} a été supprimé."
-	sleep 3
-	exit
+	whiptail --title "ERREUR" --msgbox "L'atelier ${COURANT} a été supprimé." 10 60
+	exit 1
 fi
 
 if ! test -d RECENT

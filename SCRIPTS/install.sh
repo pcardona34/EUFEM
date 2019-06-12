@@ -6,7 +6,7 @@ if [ "${PWD#$HOME/}" != "EUFEM" ]
 then
 	echo "Veuillez exécuter le script d'installation"
 	echo "à partir du dossier EUFEM ainsi :"
-	echo -e "\n./SCRIPTS/install.sh"
+	echo -e "\nsudo /bin/bash SCRIPTS/install.sh"
 
 	exit 1
 fi

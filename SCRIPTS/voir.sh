@@ -23,5 +23,3 @@ then
 else
 	whiptail --title "Erreur" --msgbox "Aucune visionneuse PDF. Vérifiez vos préférences." 10 60; exit 1
 fi
-
-

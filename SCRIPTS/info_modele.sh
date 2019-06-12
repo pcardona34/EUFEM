@@ -1,28 +1,14 @@
 #!/bin/bash
 
-if test -z $1
+if test -z "$1"
 	then echo "Syntaxe : $0 [NOM_MODELE]";exit 1
 fi
 
 MODELE="$1"
 if test -d AIDE/DESC_MODELES/${MODELE}
-	then head -3 AIDE/DESC_MODELES/${MODELE}/description.txt
-
-	echo -e "\n Afficher la description complète du modèle ? (o)ui|(n)on"
-	read REPONSE
-
-	case $REPONSE in
-		"o")
-		less AIDE/DESC_MODELES/${MODELE}/description.txt
-		;;
-		"n")
-		exit
-		;;
-		*)
-		echo "Réponse inconnue."
-	esac	
+	then whiptail --title "Modèle : $1" --scrolltext --textbox AIDE/DESC_MODELES/${MODELE}/description.txt 20 80
 else
-	echo "Aucune description n'est disponible pour le modèle ${MODELE}.";exit 1
+	whiptail --title "ERREUR" --msgbox  "Aucune description n'est disponible pour le modèle ${MODELE}." 8 60;exit 1
 fi
 
 exit 0

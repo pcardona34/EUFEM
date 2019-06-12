@@ -6,10 +6,8 @@ source CONF/atelier.ini
 
 if test -d IMG
 	then cp -u -v --recursive IMG/* ATELIER/${ATELIER}/SOURCE/IMG
-	echo "Images propagées. Vous pouvez reprendre ou commencer l'édition."
-	sleep 2
+	whiptail --title "Propagation des images" \
+--msgbox "Images propagées. Vous pouvez reprendre ou commencer l'édition." 8 60
 else
-	echo "ERREUR : le dossier IMG est manquant."
-	sleep 3
+	whiptail --title "ERREUR" --msgbox "Le dossier IMG est manquant." 8 60
 fi
-

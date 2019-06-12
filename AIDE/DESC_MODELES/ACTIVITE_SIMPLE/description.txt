@@ -36,5 +36,3 @@ Ce cours est décrit dans le fichier champs.ini
 | NUM_SEQUENCE | Numéro de la séquence              |
 | OBJET_LONG   | Objet d'étude complet              | 
 | ACTIVITE     | Méthode                            |
-
-Appuyez sur la touche <q> pour refermer cette description.

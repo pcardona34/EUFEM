@@ -1,13 +1,6 @@
 #!/bin/bash
 
-: '
-                   filebrowse.sh written by Claude Pageau
-This is a whiptail file browser demo that allows navigating through a directory
-structure and select a specified file type per filext variable.
-It Returns a filename path if selected.  Esc key exits.
-This sample code can be used in a script menu to perform an operation that
-requires selecting a file.
-'
+# D'après "filebrowse.sh written by Claude Pageau"
 
 startdir="MODELES"
 filext='tar'
@@ -86,7 +79,7 @@ if [ $exitstatus -eq 0 ]; then
         #" 0 0 0
 		
 	cd ..
-	SCRIPTS/restaure_modele.sh $filename
+	/bin/bash SCRIPTS/restaure_modele.sh $filename
 
     fi
 else

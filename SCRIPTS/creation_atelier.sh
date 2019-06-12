@@ -13,6 +13,6 @@ if test -f RECENT/$ATELIER.tar
 else
 	echo "Création du nouvel atelier ${ATELIER}..."
 	sleep 3
-	./SCRIPTS/choisit_modele.sh
+	/bin/bash SCRIPTS/choisit_modele.sh
 fi
 

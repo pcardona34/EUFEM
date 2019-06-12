@@ -10,12 +10,13 @@ possible de l'enregistrer en tant que nouveau modèle :
 
 # Comment utiliser le diaporama d'images ?
 
-Il est possible de générer automatiquement un diaporama d'images à incoporer dans votre présentation.
+Il est possible de générer automatiquement un diaporama d'images à incoporer dans votre 
+présentation.
 
 1. Copiez dans le dossier `IMG` de EUFEM le ou les dossiers contenant des images.
-2. Propagez ces images dans l'atelier courant : menu `Edition / propager les images...`
-3. Créez les sections diaporamas : menu `Edition / Générer des diaporamas...`
-4. Copiez le contenu du fichier `diaporama*.md` qui vous intéresse dans votre fichier source principal.  
+2. Propagez ces images dans l'atelier courant : menu `Editer cet atelier / propager les images...`
+3. Créez les sections diaporamas : menu `Editer cet atelier / Générer des diaporamas...`
+4. Copiez ensuite le contenu du fichier `diaporama*.md` qui vous intéresse dans votre fichier source principal.  
 
 **Actuce** : avec l'éditeur _nano_, utilisez le raccourci `CTRL+R` afin 
 d'incorporer un fichier secondaire.
@@ -28,5 +29,5 @@ faire évoluer.
 
 Pour en savoir plus, consultez l'aide de pandoc :
 
-    [Démos de pandoc](https://pandoc.org/demos.html)
+    <https://pandoc.org/demos.html>
 

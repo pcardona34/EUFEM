@@ -24,7 +24,8 @@ Voyez ces liens :
 
 # Comment saisir des "trous" dans le fichier source ?
 
-Pour rendre possible ce repérage, il a fallu ajouter une balise : `@(` à gauche et `)@` à droite.
+Pour rendre possible ce repérage, il a fallu ajouter une balise : `@(` à gauche et `)@` 
+à droite.
 
 	Ceci est un exemple de @(mot)@ à deviner.
 
@@ -66,12 +67,13 @@ titres de niveaux 1 et 2 pour lesquels ce saut est automatique.
 
 # Comment utiliser EUFEM ?
 
-Le plus simple consiste à exécuter le script ./menu.sh dans un terminal... Les items sont explicites... 
+Le plus simple consiste à exécuter le script ./eufem.sh dans un terminal... Les items 
+sont explicites...
 
-1. On choisit d'abord l'acion : `1. Atelier courant`,  
+1. On choisit d'abord l'action : `1. Propriétés de l'atelier courant`,  
 on renseigne alors le fichier des paramètres de l'atelier actuel ou à créer.
-2. On édite le fichier source unique via le menu `2. Edition...`  
- puis, dans ce menu `Edition`, on choisit l'action :  
+2. On édite le fichier source unique via le menu `2. Editer cet atelier...`  
+ puis, dans le menu `Edition`, on choisit l'action :  
  `2. Editer la source`
 3. On génère les PDF en une seule opération grâce à l'action :  
 `4. Générer tous les PDF`
@@ -112,24 +114,21 @@ dernier est créé si le nom d'atelier saisi n'existe pas encore...
 
 # Pour modifier le fichier source unique
 
-+ Menu : `Edition` / `Editer la source`
++ Menu : `Editer cet atelier` / `Editer la source`
 
 # Pour obtenir les fichiers PDF
 
-+ Menu : `Edition` / `Générer les PDF`
++ Menu : `Editer cet atelier` / `Générer les PDF`
 + Puis `Retour au menu principal` / `Publier les PDF`
 
 **Remarque** : lors de cette publication, une copie 
 des fichiers papiers sera déposée dans le dossier prévu pour les 
 impressions rapides dans votre forge. Les chemins idoines sont indiqués 
 dans le fichier `CONF/atelier.ini` éditable au moyen de l'action:  
- `Atelier courant`...
+ `Propriétés de l'atelier courant`...
 
 # Voir aussi...
 
 + [Installation de EUFEM](../Installation_Eufem.pdf)
 + [Usages avancés](../Usages_avances.pdf)
-
-
-
 

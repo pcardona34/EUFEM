@@ -2,19 +2,20 @@
 
 source ./CONF/atelier.ini
 
-echo "Un modèle sera créé à partir de l'atelier actuel : $ATELIER..."
-echo "Matière ou domaine ?"
-read DOMAINE
-echo "Activité (cours, méthode, évaluation) ?"
-read ACTIVITE
+whiptail --title "Création d'un modèle" \
+--msgbox "Un modèle sera créé à partir de l'atelier actuel : $ATELIER..." 8 60
+
+DOMAINE=$(whiptail --title "Description du modèle (1)" \
+--inputbox "Matière ou domaine ?" 10 60 "DOMAINE" 3>&1 1>&2 2>&3)
+
+ACTIVITE=$(whiptail --title "Description du modèle (2)" \
+--inputbox "Activité (cours, méthode, évaluation) ?" 10 60 "ACTIVITE" 3>&1 1>&2 2>&3)
 
 cp --recursive ATELIER/$ATELIER ATELIER/${ACTIVITE}_${DOMAINE}
 mv ATELIER/${ACTIVITE}_${DOMAINE}/SOURCE/source_${ATELIER}.md ATELIER/${ACTIVITE}_${DOMAINE}/SOURCE/source_${ACTIVITE}_${DOMAINE}.md
 
-echo "Voulez-vous personnaliser le fichier source de ce modèle ?"
-echo "(o)ui : recommandé | (n)on"
-read EDIT
-if [ "$EDIT" = "o" ]
+if (whiptail --title "Personnalisation" \
+--yesno "Voulez-vous personnaliser le fichier source de ce modèle ?" 10 60)
 then nano ATELIER/${ACTIVITE}_${DOMAINE}/SOURCE/source_${ACTIVITE}_${DOMAINE}.md
 fi
 

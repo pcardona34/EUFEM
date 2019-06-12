@@ -1,53 +1,39 @@
 #!/bin/bash
 
 # Affichage de l'aide
+function menu_aide
+{
+/bin/bash SCRIPTS/aide.sh
+}
 
-echo "Aide de la chaîne éditoriale EUFEM"
+# Menu
+TITRE="AIDE d'EUFEM"
+INVITE="Aide de la chaîne éditoriale EUFEM"
+OPTION=$(whiptail --title "$TITRE" --menu "$INVITE" 13 60 4 \
+"G" "Généralité et usages courants" \
+"U" "Usages avancés" \
+"M" "Modèles : description des modèles disponibles" \
+"Q" "Quitter l'aide." 3>&1 1>&2 2>&3)
 
-echo -e "\n(G)énéralité et usages courants"
-echo "(U)sages avancés"
-echo "(I)nstallation des programmes nécessaires"
-echo "(M)odèles : description des modèles disponibles"
-echo "(Q)uitter l'aide."
+exitstatus=$?
+if [ $exitstatus = 0 ]; then
 
-echo -e "\n Votre choix ? (Validez avec la touche <Entrée>)"
-read REP
-
-case $REP in
-	"g")
-	xdg-open AIDE/LisezMoi.pdf &
-	$0
-	;;
+case $OPTION in
 	"G")
 	xdg-open AIDE/LisezMoi.pdf &
-	$0
-	;;
-	"u")
-	xdg-open AIDE/Usages_avances.pdf &
-	$0
+	menu_aide
 	;;
 	"U")
 	xdg-open AIDE/Usages_avances.pdf &
-	$0
-	;;
-	"i")
-	xdg-open AIDE/Installation_Eufem.pdf &
-	$0
-	;;
-	"I")
-	xdg-open AIDE/Installation_Eufem.pdf &
-	$0
-	;;
-	"m")
-	SCRIPTS/liste_modeles.sh
+	menu_aide
 	;;
 	"M")
-	SCRIPTS/liste_modeles.sh
-	;;
-	"q")
-	./menu.sh
+	/bin/bash SCRIPTS/liste_modeles.sh
 	;;
 	"Q")
-	./menu.sh
+	/bin/bash ./eufem.sh
 	;;
 esac
+else
+  echo "Vous avez annulé..."
+fi

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-CHEMIN_DOSSIER=$1
+CHEMIN_DOSSIER="$1"
 
-if test -z $CHEMIN_DOSSIER
+if test -z "$CHEMIN_DOSSIER"
 then
 	echo "Syntaxe : $0 [CHEMIN_DOSSIER]"
 	exit 1
@@ -23,6 +23,6 @@ do
 	echo -e "![$legende](IMG/$(basename $CHEMIN_DOSSIER)/$(basename $img))\n" >> $CIBLE
 done
 
-echo "La source du diaporama ${legende} a été écrite dans ATELIER/${ATELIER}/SOURCE."
-sleep 2
+whiptail --title "Diaporama automatique" --msgbox "La source du diaporama ${legende} a été écrite dans ATELIER/${ATELIER}/SOURCE." 10 60
+
 

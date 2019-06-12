@@ -28,5 +28,3 @@ Les champs suivants composent la référence du texte étudié :
 | AUTEUR | Auteur                         |
 | TITRE  | Titre de l'œuvre ou du recueil |
 | DETAIL | chapitre, titre de poème, etc. | 
-
-Appuyez sur la touche <q> pour refermer cette description.

@@ -14,10 +14,4 @@ source CONF/atelier.ini
 mv ATELIER/${ARCHIVE%.*} ATELIER/${ATELIER}
 mv ATELIER/${ATELIER}/SOURCE/source_${ARCHIVE%.*}.md ATELIER/${ATELIER}/SOURCE/source_${ATELIER}.md 
 
-
-echo "Le nouvel atelier ${ATELIER} peut être édité."
-sleep 3
-
-
-
-
+whiptail --title "Nouvel atelier" --msgbox "Le nouvel atelier ${ATELIER} peut être édité." 8 60

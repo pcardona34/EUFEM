@@ -15,5 +15,3 @@ Ce cours est décrit dans le fichier champs.ini
 | OBJET_COURT  | Objet d'étude abrégé (POÉSIE)      |
 | NUM_SEQUENCE | Numéro de la séquence              |
 | ACTIVITE     | Description de l'activité
-
-Appuyez sur la touche <q> pour refermer cette description.

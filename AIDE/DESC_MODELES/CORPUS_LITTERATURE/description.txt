@@ -14,5 +14,3 @@ Ce cours est décrit dans le fichier champs.ini
 | ------------ | ---------------------------------- |
 | OBJET_COURT  | Objet d'étude abrégé               |
 | NUM_SEQUENCE | Numéro de la séquence              |
-
-Appuyez sur la touche <q> pour refermer cette description.

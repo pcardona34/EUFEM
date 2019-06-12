@@ -40,38 +40,38 @@ if [ $exitstatus = 0 ]; then
 case $OPTION in
 	"1")
 	# On synchronise les images
-	./SCRIPTS/propager_images.sh
-	$0
+	/bin/bash SCRIPTS/propager_images.sh
+	/bin/bash $0
 	;;
 	"2")
 	# Edition source
 	$EDITEUR ${FICHIER_SOURCE}
-	$0
+	/bin/bash $0
 	;;
 	"3")
 	# Edition des champs des en-tetes
 	nano ATELIER/${ATELIER}/INI/champs.ini
-	$0
+	/bin/bash $0
 	;;
 	"4")
 	# PDF versions papier et présentation
-	
+
 	# Des restrictions dans les sorties PDF ?
 	if test -f ATELIER/${ATELIER}/INI/out.ini
 	then source ATELIER/${ATELIER}/INI/out.ini
 	else PAPIER=true;TROUEE=true;BEAMER=true
 	fi
-	
-	if $PAPIER;then ${MODS}/md2pdf.sh ${ATELIER} --version C;fi
-	if $TROUEE;then ${MODS}/md2pdf.sh ${ATELIER} --version T;fi
-	if $BEAMER;then ${MODS}/md2beamer.sh ${ATELIER};fi
+
+	if $PAPIER;then /bin/bash ${MODS}/md2pdf.sh ${ATELIER} --version C;fi
+	if $TROUEE;then /bin/bash ${MODS}/md2pdf.sh ${ATELIER} --version T;fi
+	if $BEAMER;then /bin/bash ${MODS}/md2beamer.sh ${ATELIER};fi
 
 	# Pause pour le débogage éventuel
 	echo "Appuyez sur Entrée pour terminer..."
 	read
 	# On fait le ménage
-	${MODS}/clean.sh
-	$0
+	/bin/bash ${MODS}/clean.sh
+	/bin/bash $0
 	;;
 	"5")
 	# Génération automatique des sources de diaporamas
@@ -79,16 +79,16 @@ case $OPTION in
 	do
 		if test -d $dossier
 		then
-			${SCRIPTS}/genere_diaporama.sh $dossier
+			/bin/bash SCRIPTS/genere_diaporama.sh $dossier
 		else
 			 echo "$dossier n'est pas un dossier d'images. Ignoré."
 		fi 
 	done
 	sleep 2
-	$0
+	/bin/bash $0
 	;;
 	"6")
-	./menu.sh
+	/bin/bash ./eufem.sh
 	;;
    esac
 

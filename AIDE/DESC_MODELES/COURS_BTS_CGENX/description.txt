@@ -20,5 +20,3 @@ au moyen de champs spécifiques :
 | ACTIVITE   | Cours...                               |
 | MATIERE    | Culture générale ou Méthode            |
 | NIVEAU_BTS | 1 ou 2                                 |
-
-Appuyez sur la touche <q> pour refermer cette description.
