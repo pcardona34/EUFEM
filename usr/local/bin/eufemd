@@ -1,0 +1,1483 @@
+#!/bin/bash
+
+### eufemd
+# Eufemd est une petite chaîne éditoriale pédagogique
+# en langage Markdown
+#
+# MIT License
+#
+# Copyright (c) 2019 Patrick CARDONA
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
+### Variable globale ###
+LOG=$HOME/.eufemd.log
+export LOG
+
+### Initialisation du journal
+date > "$LOG"
+
+### Fonctions ###
+
+###########################################################
+### message ###############################################
+# Affiche un message au moyen de dialog
+# Paramètres :
+# $1 : message à afficher
+# $2 : durée de l'affichage
+
+message()
+{
+
+local CONTENU
+CONTENU=$1
+local DUREE
+DUREE=${2:-2} # si $2 n'est pas fournie, on lui affecte la valeur 2
+
+dialog --clear --sleep "$DUREE" --infobox "$CONTENU" 0 0
+
+}
+
+
+############################################################
+### initialise_home_eufemd ####################
+# Vérifie l'existence du dossier eufemd
+# et sa structure dans le dossier personnel
+# de l'utilisateur courant
+
+initialise_home_eufemd()
+{
+
+if [[ -f "$HOME/.eufemd.conf" ]];then
+	# shellcheck source=/home/pi/.eufemd.conf
+	. "$HOME/.eufemd.conf"
+	if [[ -d "$EUFEMD" ]];then # On vérifie que le dossier soit présent
+		return 0
+	fi
+fi
+
+# C'est la première fois... ou le dossier a été supprimé...
+local EUFEMD
+while [[ -z $EUFEMD ]];do
+	EUFEMD=$(whiptail --title "Dossier de travail de EUFEMD" --inputbox "Chemin local du dossier :" 12 60 "$HOME/eufemd" 3>&1 1>&2 2>&3)
+done
+
+local EXEMPLE
+EXEMPLE=/usr/local/share/eufemd/ATELIER/EXEMPLE.tar
+local MODELES
+MODELES=/usr/local/share/eufemd/MODELES
+local INI
+INI=/usr/local/etc/eufemd/atelier.ini
+local PREFS
+PREFS=/usr/local/etc/eufemd/prefs.ini
+local ACTUEL
+
+if ! [[ -d $EUFEMD ]];then
+	mkdir "$EUFEMD"
+	for subdir in ATELIER CONF MODELES RECENT;do
+		mkdir -p "$EUFEMD/$subdir"
+	done
+	# On restaure l'atelier EXEMPLE
+	cp -v "$EXEMPLE" "$EUFEMD/ATELIER/"
+	ACTUEL=$(pwd)
+	cd "$EUFEMD/ATELIER/" && tar xvf EXEMPLE.tar && rm EXEMPLE.tar
+	cd "$ACTUEL" || return
+	# On copie les modèles de base dans MODELES
+	for modele in "$MODELES"/*.tar;do
+		cp -v "$modele" "$EUFEMD/MODELES/"
+	done
+	# On copie la configuration par défaut dans CONF
+	cp -v "$INI" "$EUFEMD/CONF/"
+	cp -v "$PREFS" "$EUFEMD/CONF/"
+
+	# On crée un fichier de configuration personnel
+	message "Fin de la phase d'initialisation."
+
+	echo "EUFEMD=$EUFEMD" > "$HOME/.eufemd.conf"
+	local MOI
+	MOI=$(whoami)
+	message "EUFEMD a été configuré pour l'utilisateur ${MOI}."
+	# Appel récursif
+	initialise_home_eufemd
+fi
+
+}
+
+#############################################################
+### parametre_est_correct
+### Vérifie qu'un paramètre ne soit pas vide
+# Paramètres de la fonction :
+#  $1 : nom de la variable à vérifier
+#  $2 : valeur à vérifier
+
+parametre_est_correct()
+{
+
+if [[ -z $2 ]];then
+	whiptail --title "Erreur" --msgbox "La variable $1 ne doit pas être vide." 10 60
+    	return 1
+else
+	return 0
+fi
+}
+
+##############################################################
+### proprietes_atelier
+### vérifie l'intégrité des paramètres dans CONF/atelier.ini
+### Et oblige, le cas échéant, à corriger le paramètres défectueux
+
+proprietes_atelier()
+{
+
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/prefs.ini
+. "$EUFEMD/CONF/prefs.ini"
+
+# Choix du nom de l'atelier
+$EDITEUR "$EUFEMD/CONF/atelier.ini"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+# On vérifie la saisie du nom de cet atelier
+if (parametre_est_correct "ATELIER" "$ATELIER" \
+	&& parametre_est_correct "FORGE" "$FORGE" \
+	&& parametre_est_correct "NIVEAU" "$NIVEAU" \
+	&& parametre_est_correct "COURS" "$COURS" \
+	&& parametre_est_correct "IMPRESSION" "$IMPRESSION" \
+	&& parametre_est_correct "IMAGES" "$IMAGES");then
+
+	message "Les propriétés ont été enregistrées."
+	return 0 
+else
+	# appel récursif
+	proprietes_atelier
+fi
+
+}
+
+### sauve_atelier_courant #################################
+# Sauve mon atelier courant en cas de nouvel atelier
+# Paramètres
+# $1 : nom de l'atelier courant : $COURANT
+
+sauve_atelier_courant()
+{
+
+local COURANT
+COURANT=$1
+local ACTUEL
+
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+
+if ! [[ -d $EUFEMD/ATELIER/$COURANT ]];then
+	whiptail --title "ERREUR" --msgbox "L'atelier ${COURANT} a été supprimé." 10 60
+	return
+fi
+
+if ! [[ -d $EUFEMD/RECENT ]];then 
+	mkdir -p "$EUFEMD/RECENT"
+fi 
+
+# On fait le ménage avant de créer l'archive du modèle
+for pdf in "$EUFEMD/ATELIER/$COURANT"/*.pdf;do
+	if [[ -f $pdf ]];then
+		rm "$pdf"
+	fi
+done
+
+ACTUEL=$(pwd)
+
+# On crée ou on actualise l'archive dans le dossier des archives récentes
+if [[ -f $EUFEMD/RECENT/$COURANT.tar ]];then
+	cd "$EUFEMD/ATELIER" && tar uvf "$EUFEMD/RECENT/$COURANT.tar" "$COURANT" && ACTION="mise à jour"
+	cd "$ACTUEL" || exit 1 
+else
+	cd "$EUFEMD/ATELIER" && tar cvf "$EUFEMD/RECENT/$COURANT.tar" "$COURANT" && ACTION="créée"
+	cd "$ACTUEL" || exit 1 
+fi
+
+# On fait le ménage dans ATELIER
+rm -R "$EUFEMD/ATELIER/$COURANT"
+#rm -R "$EUFEMD/IMG" && mkdir -p "$EUFEMD/IMG"
+
+message "L'archive de l'atelier ${COURANT} a été ${ACTION}."
+
+}
+
+#########################################################
+
+### restaure_modele #####################################
+# Restaure le modèle (tar) passé en paramètre
+# Paramètre :
+# $1 : nom du fichier de modèle (extension tar)
+
+restaure_modele()
+{
+
+# Restauration du modèle choisi
+local ARCHIVE
+ARCHIVE=$1
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+
+local ACTUEL
+ACTUEL=$(pwd)
+
+message "Restauration du modèle : ${ARCHIVE%.tar}..."
+
+cp "$EUFEMD/MODELES/$ARCHIVE" "$EUFEMD/ATELIER/"
+cd "$EUFEMD/ATELIER" && tar xf "$ARCHIVE" && rm "$ARCHIVE"
+cd "$ACTUEL" || return
+
+# Le nom du nouveau cours se trouve dans atelier.ini
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+mv "$EUFEMD/ATELIER/${ARCHIVE%.tar}" "$EUFEMD/ATELIER/${ATELIER}"
+mv "$EUFEMD/ATELIER/${ATELIER}/SOURCE/source_${ARCHIVE%.tar}.md" "$EUFEMD/ATELIER/${ATELIER}/SOURCE/source_${ATELIER}.md"
+
+message "Le nouvel atelier ${ATELIER} peut être édité."
+
+}
+
+##########################################################
+
+### choisit_modele ########################################
+# Permet de sélectionner un modèle pour le nouvel atelier
+# Utilise dialog --fselect
+
+choisit_modele()
+{
+
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+local MODELES
+MODELES=$EUFEMD/MODELES
+local startdir
+startdir=$MODELES
+local menutitle
+menutitle="Sélection des modèles"
+local selection
+selection=$(dialog --title "$menutitle" \
+     --fselect "${startdir}/" 16 60 3>&1 1>&2 2>&3)
+
+local exitstatus
+exitstatus=$?
+if [ $exitstatus -eq 0 ];then
+    if [[ "$selection" == "" ]];then
+        echo "L'utilisateur a pressé la touche Esc sans sélection de fichier"
+    else
+	local EXT
+	EXT="${selection##*.}"
+	if [[ $EXT = 'tar' ]];then
+		restaure_modele "${selection##*/}"
+	else
+		message "Le fichier sélectionné n'a pas la bonne extension : $EXT"
+	fi
+    fi
+else
+    echo "L'utilisateur a annulé la sélection du modèle."
+fi
+
+}
+
+##########################################################
+
+
+### creation_atelier ######################################
+# Création d'un nouvel atelier à partir du nouveau nom
+# dans atelier.ini
+# Paramètres :
+# $1 : nom de l'atelier $ATELIER
+
+creation_atelier()
+{
+
+local ATELIER
+ATELIER=$1
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+local ACTUEL
+ACTUEL=$(pwd)
+
+# Existe-t-il une archive de cet atelier dans le dossier RECENT ?
+if [[ -f $EUFEMD/RECENT/$ATELIER.tar ]];then
+	message "Cet atelier, ${ATELIER},  existe déjà et sera restauré..."
+	cp "$EUFEMD/RECENT/$ATELIER.tar" "$EUFEMD/ATELIER/"
+	cd "$EUFEMD/ATELIER" && tar xvf "$ATELIER.tar" && rm "$ATELIER.tar"
+	cd "$ACTUEL" || return
+	message "Fin de la restauration."
+else
+	message "Création du nouvel atelier :  ${ATELIER}..."
+	choisit_modele
+fi
+
+}
+
+###########################################################
+### GESTION DES IMAGES
+###########################################################
+
+### cherche_fichier_inc ##################################
+# On recherche un fichier à inclure pour la directive donnée
+# Paramètre :
+# $1 : nom de la directive
+
+cherche_fichier_inc()
+{
+
+# Variables
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+
+if [[ -n "$1" ]] && [[ -f "$EUFEMD/ATELIER/$ATELIER/SOURCE/$1" ]];then
+	message "Directive ${1} : le fichier à inclure est présent."
+else
+	echo "Directive ${1} : aucun fichier..."
+	# Il faut donc choisir une image au moins...
+	choisit_image "$1"
+fi
+
+}
+
+##########################################################
+
+### cherche_directive_image ###############################
+# Recherche dans le fichier source la présence de
+# directive(s) pour inclure des images
+
+cherche_directive_image()
+{
+
+# Variables
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+
+# Fichier de source de notre atelier courant
+local SOURCE
+SOURCE="$EUFEMD/ATELIER/$ATELIER/SOURCE/source_${ATELIER}.md"
+# stockage de la recherche des directives IMG
+local INC
+INC=/tmp/IMG_INC.txt
+
+if [[ -f "$SOURCE" ]];then
+	# On recherche si des directives IMG sont présentes 
+	# dans le fichier SOURCE
+	grep $SOURCE -e "IMG" > "$INC"
+fi
+
+# Des directives sont présentes ?
+if [[ $? -eq 0 ]];then
+	# Il existe des directives pour inclure des images..."
+	while read -r LIGNE;do
+		echo "$LIGNE" && cherche_fichier_inc "$LIGNE"
+	done < "$INC"
+else
+	message "Images ? Aucune directive..."
+	whiptail --title "Aide sur les images" \
+	--msgbox "Pour inclure des images, insérez d'abord une directive '@IMGXX' à l'endroit désiré dans le fichier source.\n'XX' est un nombre de '01' à '10'.\n\nPuis recommencez ici..." 14 60
+fi
+
+}
+
+### choisit_image ########################################
+# Permet de sélectionner une image / un dossier d'images pour cet atelier
+# Paramètre :
+# $1 : nom de la directive courante
+
+choisit_image()
+{
+
+local DIRECTIVE
+DIRECTIVE=$1
+
+# variables...
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# On récupère le chemin du dossier des Images dans $HOME
+# shellcheck source=/home/pi/eufemd/CONF/prefs.ini
+. "$EUFEMD/CONF/prefs.ini"
+
+local startdir
+local IMAGES
+IMAGES=$MES_IMAGES
+if [[ -z "$IMAGES" ]] || ! [[ -d "$IMAGES" ]];then 
+	startdir="$HOME/"
+else
+	startdir="$IMAGES/"
+fi
+
+local menutitle
+menutitle="Directive $DIRECTIVE"
+
+local IMAGE_CHOISIE
+IMAGE_CHOISIE=$(dialog --title "$menutitle" \
+	 --fselect "$startdir" 16 60 3>&1 1>&2 2>&3)
+
+local exitstatus=$?
+if [[ $exitstatus -eq 0 ]];then
+    if [[ -z "$IMAGE_CHOISIE" ]];then
+        echo "Aucune image sélectionnée."
+	return
+    else
+	echo "Image choisie pour $DIRECTIVE : $IMAGE_CHOISIE"
+	# On dénombre les images du dossier correspondant à l'image choisie
+	local DOSSIER
+	DOSSIER="${IMAGE_CHOISIE%/*}"
+	local NOMBRE
+	NOMBRE=$(find "$DOSSIER"/*.png | wc -l)
+	# shellcheck disable=SC2086
+	if [[ $NOMBRE -eq 1 ]];then
+		# Une seule image...
+		local CIBLE
+		CIBLE="$EUFEMD/ATELIER/$ATELIER/SOURCE/$DIRECTIVE"
+		local baseimg
+		baseimg="${IMAGE_CHOISIE##*/}"
+		local imgsansext
+		imgsansext="${baseimg%.*}"
+		local legende
+		legende=${imgsansext//$MOTIF/ }
+		echo -e "\n![$legende](${IMAGE_CHOISIE})\n" > "$CIBLE"
+	else
+		if(whiptail --title "Diaporama" --yesno "Il existe plusieurs images dans ce dossier. Voulez-vous générer un diaporama avec toutes ces images ?" 10 60 3>&1 2>&1 1>&3);then
+			genere_diaporama "${IMAGE_CHOISIE%/*}" "$DIRECTIVE"
+		fi
+	fi
+   fi
+else
+    echo "Vous avez annulé la sélection..."
+fi
+
+}
+
+###########################################################
+# genere_diaporama
+# Si des dossiers d'images sont présents, on génère automatiquement
+# le code du diaporama
+# Paramètre :
+# $1 : chemin du dossier d'images
+# $2 : nom de la directive où doit s'insérer le diaporama dans le fichier source
+
+genere_diaporama()
+{
+
+local CHEMIN_DOSSIER
+CHEMIN_DOSSIER=$1
+local DIRECTIVE
+DIRECTIVE=$2
+
+# On supprime les espaces dans les noms des fichiers
+rename 's/[[:blank:]]/_/g' "$CHEMIN_DOSSIER"/*.png
+rename 's/[[:blank:]]/_/g' "$CHEMIN_DOSSIER"/*.jpg
+
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+local MOTIF
+MOTIF="\_"
+
+local CIBLE
+CIBLE="$EUFEMD/ATELIER/${ATELIER}/SOURCE/$DIRECTIVE"
+
+local TITRE_DIAPORAMA
+TITRE_DIAPORAMA=$(whiptail --title "Titre du diaporama" \
+	--inputbox "Titre : " 10 60 "Diaporama" 3>&1 1>&2 2>&3)
+
+echo -e "# ${TITRE_DIAPORAMA}\n" > "$CIBLE"
+
+# Boucle pour les png
+local ACTUEL
+ACTUEL=$(pwd)
+cd "$CHEMIN_DOSSIER" && { \
+for img in *.png;do
+	message "$img" 1
+	if [[ -f $img ]];then
+		imgsansext="${img%.png}"
+		legende="${imgsansext//$MOTIF/ }"
+		echo -e "---\n" >> "$CIBLE"
+		echo -e "![$legende]($CHEMIN_DOSSIER/$img)\n" >> "$CIBLE"
+	fi
+done
+
+# Boucle pour le jpg
+for img in *.jpg;do
+	if [[ -f $img ]];then
+		imgsansext=${img%.jpg}
+		legende=${imgsansext//$MOTIF/ }
+		echo -e "\n---\n![$legende]({$CHEMIN_DOSSIER}/{$img})\n" >> "$CIBLE"
+	fi
+done }
+
+cd "$ACTUEL" || return
+
+message "Diaporama automatique : la source du diaporama $DIRECTIVE a été écrite dans ATELIER/${ATELIER}/SOURCE/$2" 3
+
+}
+
+
+###########################################################
+### Fonctions de génération des documents #################
+###########################################################
+
+### entete_presentation ###################################
+# Génère l'en-tête de la présentation
+
+entete_presentation()
+{
+
+# On récupère les variables
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+
+local CHAMPS
+CHAMPS="$EUFEMD/ATELIER/${ATELIER}/INI/champs.ini"
+if [[ -s $CHAMPS ]];then
+	# shellcheck source=/home/pi/eufemd/ATELIER/EXEMPLE/INI/champs.ini
+	. $CHAMPS
+else
+	whiptail --title "ERREUR" --msgbox "Impossible de charger les champs dans ${CHAMPS}." 10 60
+	return
+fi
+
+# Nom du fichier d'en-tête de la présentation
+local CIBLE
+CIBLE=/tmp/ENTETE_PRESENTATION.md
+
+# On écrit l'en-tête
+local DATE
+DATE=$(date +"%d %b %Y")
+
+if [[ -n $MODELE ]];then
+	case $MODELE in
+	"METHODE_LITTERATURE")
+	printf "%% %s \n%% %s - %s \n%% %s\n\n" "$TITRE" "$OBJET_COURT" "$ACTIVITE" "${DATE}" > $CIBLE
+	;;
+	"COURS_LITTERATURE")
+	printf "%% %s \n%% %s \n%% %s\n\n" "$TITRE" "$OBJET_COURT" "${DATE}" > "$CIBLE"
+	;;
+	"COURS_BTS_CGENX")
+	printf "%% BTS-%s - %s de %s \n%% %s (%s) \n%% %s\n\n" "$NIVEAU_BTS" "$ACTIVITE" "$MATIERE" "$THEME" "$NUM_PARTIE" "${DATE}" > "$CIBLE"
+	;;
+	*)
+	printf "%% %s \n%% %s \n%% %s\n\n" "$TITRE" "$ACTIVITE" "$DATE" > "$CIBLE"
+	esac
+fi
+
+if [[ $MODELE = "METHODE_LITTERATURE" ]];then
+	{
+	echo "+ Séquence ${NUM_SEQUENCE}  "
+	echo "+ OBJET D'ÉTUDE : ${OBJET_LONG}  "
+	echo -e "+ _${TITRE}_ \n"
+	} >> "$CIBLE"
+
+fi
+
+if [[ $MODELE = "COURS_LITTERATURE" ]];then
+{
+echo -e "## Référence  \n"
+echo "+ Séquence ${NUM_SEQUENCE}  "
+echo "+ OBJET D'ÉTUDE : ${OBJET_LONG}  "
+echo -e "+ ${AUTEUR}, _${TITRE}_, ${DETAIL}  \n"
+echo "|Référence dans le descriptif|Modalité de lecture|  "
+echo "|---|---|  "
+echo "|Réf. ${REF_DESC}, page ${NUM_SEQUENCE}|${ACTIVITE}|  "
+} >> "$CIBLE"
+fi
+
+if [[ $MODELE = "COURS_BTS_CGENX" ]];then
+	echo -e "\n#${NUM_PARTIE} - ${PARTIE}\n" >> "$CIBLE"
+fi
+
+return 0
+}
+
+### entete_papier #########################################
+# Génère l'en-tête papier du document courant
+# $1 : paquet TeX supplémentaire : LINENO, etc.
+
+
+entete_papier()
+{
+
+# On récupère les variables
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+
+local STY
+STY=${1:-'aucun'} # Par défaut : aucun
+
+local CHAMPS
+CHAMPS="$EUFEMD/ATELIER/${ATELIER}/INI/champs.ini"
+if [[ -f "$CHAMPS" ]];then
+	# shellcheck source=/home/pi/eufemd/ATELIER/EXEMPLE/INI/champs.ini
+	. "$CHAMPS"
+else
+	echo "Le fichier de configuration des champs $CHAMPS est manquant." >> "$LOG"
+	return
+
+fi
+
+# Chemin du fichier d'en-tête PAPIER
+local CIBLE
+CIBLE=/tmp/ENTETE_PAPIER.md
+
+# On écrit l'en-tête du header Fancy de LaTeX
+
+echo "---" > "$CIBLE"
+
+# shellcheck disable=SC2028
+{
+echo "header-includes: |"
+echo "    \\usepackage{lastpage}"
+echo "    \\usepackage{fancyhdr}"
+case $STY in
+	"LINENO")
+	echo "    \\usepackage{lineno}";;
+	"POEMSCOL")
+	echo "    \\usepackage{poemscol}";;
+	*)
+	;;
+esac
+echo "    \\pagestyle{fancy}"
+if [[ $STY = "POEMSCOL" ]];then
+	echo "    \\renewcommand{\\headrulewidth}{1pt}"
+fi
+echo "    \\lhead{\\textbf{${ENTETE_GAUCHE}}}"
+echo "    \\chead{}"
+if [[ -n $MODELE ]];then
+	case $MODELE in
+	"COURS_LITTERATURE")
+	if [[ -n $DETAIL ]];then
+		echo "    \\rhead{\\textbf{${AUTEUR}, \\textit{${TITRE}}, ${DETAIL}}}"
+	else
+		echo "    \\rhead{\\textbf{${AUTEUR}, \\textit{${TITRE}}}}"
+	fi
+	;;
+	"COURS_BTS_CGENX")
+	 echo "    \\rhead{\\textbf{BTS-${NIVEAU_BTS} - \\textit{${THEME} : ${NUM_PARTIE} - ${PARTIE}}}}"
+	;;
+	*)
+	if [[ -n $TITRE ]];then
+		echo "    \\rhead{\\textbf{${ACTIVITE} - \\textit{${TITRE}}}}"
+	else
+		echo "    \\rhead{\\textbf{${ACTIVITE}}}"
+	fi
+	;;
+esac
+fi
+echo "    \\lfoot{${PIED_GAUCHE}}"
+echo "    \\cfoot{}"
+echo "    \\rfoot{\\thepage~/~\\pageref{LastPage}}"
+if [[ $STY = "POEMSCOL" ]];then
+	echo "    \\centertitles"
+fi
+echo "---"
+} >> "$CIBLE"
+
+# On écrit le titre sur le haut de la première page
+
+if [[ -n $MODELE ]];then
+	case $MODELE in
+	"METHODE_LITTERATURE")
+	echo "# Séquence ${NUM_SEQUENCE}, ${OBJET_COURT}.  " >> "$CIBLE"
+	;;
+	"COURS_LITTERATURE")
+	echo "# Séquence ${NUM_SEQUENCE}, ${OBJET_COURT}.  " >> "$CIBLE"
+	if [[ -n $DETAIL ]];then
+		echo -e "## ${ACTIVITE} (${REF_DESC}) : ${AUTEUR}, _${TITRE}_, ${DETAIL}  \n" >> "$CIBLE"
+	else
+		echo -e "## ${ACTIVITE} (${REF_DESC}) : ${AUTEUR}, _${TITRE}_ \n" >> "$CIBLE"
+	fi
+	;;
+	"COURS_BTS_CGENX")
+	{
+	echo "# ${ACTIVITE} de ${MATIERE}"
+	echo -e "## _${THEME}_ : ${NUM_PARTIE} - ${PARTIE}\n"
+	} >> "$CIBLE"
+	;;
+	# Par défaut
+	*)
+	if [[ -n $TITRE ]];then
+		echo -e "\n# ${ACTIVITE} : _${TITRE}_ \n" >> "$CIBLE"
+	else
+		echo -e "\n# ${ACTIVITE} \n" >> "$CIBLE"
+	fi
+	;;
+	esac
+fi
+# Fin de écriture en-tête
+echo "En-tête papier généré." >> "$LOG"
+
+return 0
+
+}
+
+### md2pn #################################################
+# Génère les versions papier 
+
+md2pn()
+{
+
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+# shellcheck source=/home/pi/eufemd/ATELIER/EXEMPLE/INI/champs.ini
+. "$EUFEMD/ATELIER/$ATELIER/INI/champs.ini"
+
+local IN
+IN=$EUFEMD/ATELIER/${ATELIER}/SOURCE/source_${ATELIER}.md
+local OPTION
+OPTION=$2
+echo "Option passée à $0 : $2" >> "$LOG"
+local SED
+SED=$EUFEMD/ATELIER/$ATELIER/SED
+local TEX
+TEX=$EUFEMD/ATELIER/$ATELIER/TEX
+local ET
+ET=/tmp/ENTETE_PAPIER.md
+local OPT
+
+# On (ré)génère l'en-tête PAPIER
+if [[ -n $MODELE ]] ;then
+	case $MODELE in
+		"CORPUS_POESIE")
+		entete_papier POEMSCOL;;
+		"CORPUS_LITTERATURE")
+		entete_papier LINENO;;
+		*)
+		entete_papier;;
+	esac
+fi
+
+if ! [[ -f "$ET" ]];then
+	echo "Une erreur est survenue dans la génération de l'en-tête papier." >> "$LOG"
+	return
+fi
+
+case $OPTION in
+    "T")
+	OPT="TROUEE"
+	sed -f ${SED}/pn_trouee.sed $IN > /tmp/eufemd.md
+	;;
+    "C")
+	OPT="COMPLETE"
+	sed -f ${SED}/pn_complete.sed $IN > /tmp/eufemd.md
+	;;
+esac
+
+if [[ $IMAGES = true ]];then
+	#echo -e "\nOption : en incorporant les images."
+	mv /tmp/eufemd.md /tmp/pret.md
+else
+	#echo -e "\nOption : sans images"
+	sed -f ${SED}/pn_sans_images.sed /tmp/eufemd.md > /tmp/pret.md
+fi
+
+local OUT
+OUT=$EUFEMD/ATELIER/${ATELIER}/prise_de_notes_${ATELIER}_${OPT}.pdf
+
+# echo -e "\n Génération de la version papier en cours...\n Version : ${OPT}"
+pandoc -s -V papersize:a4 -V geometry:margin=2.5cm $ET /tmp/pret.md -o $OUT 2>>"$LOG"
+# message "Génération terminée dans le dossier $EUFEMD/ATELIER/${ATELIER}."
+
+return 0
+
+}
+
+##########################################################
+### md2beamer ############################################
+# Génère la présentation
+
+md2beamer()
+{
+
+# On récupère les variables
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+
+local SED
+SED=$EUFEMD/ATELIER/$ATELIER/SED
+local TEX
+TEX=$EUFEMD/ATELIER/$ATELIER/TEX
+local DOSSIER_SOURCE
+DOSSIER_SOURCE=$EUFEMD/ATELIER/$ATELIER/SOURCE
+local IN
+IN=$DOSSIER_SOURCE/source_${ATELIER}.md
+local ET
+ET=/tmp/ENTETE_PRESENTATION.md
+
+# Si des blocs images sont présents, on les incorpore au fichier source
+find $DOSSIER_SOURCE/IMG* -nowarn 1>/dev/null 2>&1
+if [[ $? = 0 ]];then
+	for bloc in "$DOSSIER_SOURCE"/IMG*;do
+		incorpore_le_bloc "${bloc##*/}"
+	done
+fi
+
+# On applique les substitutions du modèle : nettoyage des trous, etc.
+sed -f $SED/beamer.sed $IN > /tmp/eufemd.md
+
+# On génère puis on ajoute l'en-tête...
+entete_presentation
+
+if [[ -f $ET ]];then
+	cat $ET /tmp/eufemd.md > /tmp/pret.md
+else
+	message "Erreur : problème dans la génération de $ET"
+	return
+fi
+
+#echo -e "\n Génération de la présentation au format Beamer / PDF..."
+pandoc -s -t beamer --slide-level 2 -V theme:Boadilla -H $TEX/citation.tex /tmp/pret.md -o "$EUFEMD/ATELIER/$ATELIER/presentation_${ATELIER}.pdf"
+
+# On rétablit le fichier source sans les blocs images
+if [[ -f $IN.SAUVE ]];then
+	mv "$IN.SAUVE" "$IN"
+fi
+
+#message "Fin de la génération dans le dossier $EUFEMD/ATELIER/${ATELIER}."
+
+}
+
+##########################################################
+### incorpore_le_bloc
+# Incorpore les sections avec des images ou des diaporamas
+# dans le fichier source
+# $1 : nom de la directive à remplacer par le bloc image(s)
+
+incorpore_le_bloc()
+{
+
+# shellcheck source=/home/pi/.eufemd.conf
+. $HOME/.eufemd.conf
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. $EUFEMD/CONF/atelier.ini
+
+local DOSSIER_SOURCE
+local FICHIER_SOURCE
+local LIGNES_SRC	# Nombre de lignes dans le fichier source
+local NUMLIGNE		# Ligne où se situe la directive IMG
+local DIRECTIVE		# Nom de la directive IMG
+local RES		# Résultat de la recherche de la directive : "num:ligne"
+local SAUVE		# Sauvegarde du fichier source
+local LIGNES		# Lignes à copier...
+local DEBUT		# début du fichier final
+local FIN		# Fin du fichier final
+
+DIRECTIVE=$1
+DOSSIER_SOURCE=$EUFEMD/ATELIER/$ATELIER/SOURCE
+FICHIER_SOURCE=$DOSSIER_SOURCE/source_$ATELIER.md
+BLOC_IMAGES=$DOSSIER_SOURCE/$DIRECTIVE
+SAUVE=$FICHIER_SOURCE.SAUVE
+DEBUT=/tmp/DEBUT
+FIN=/tmp/FIN
+
+# On conserve une sauvegarde du fichier source initial, c-à-d sans les images
+if ! [[ -f $SAUVE ]];then
+	cp "$FICHIER_SOURCE" "$SAUVE"
+fi
+
+# On compte les lignes du fichier source
+LIGNES_SRC=$(wc -l "$FICHIER_SOURCE")
+LIGNES_SRC="${LIGNES_SRC% *}"
+
+# On recherche la ligne où se situe la directive
+RES=$(grep "$FICHIER_SOURCE" -n -e "$DIRECTIVE")
+NUMLIGNE=${RES%:*}
+
+# Combien de lignes avant la directive ?
+LIGNES=$(( NUMLIGNE - 1 ))
+
+# DEBUT
+head -n "$LIGNES" "$FICHIER_SOURCE" > "$DEBUT"
+
+# Et maintenant, combien de lignes restantes ?
+LIGNES=$(( LIGNES_SRC - NUMLIGNE ))
+
+# FIN
+tail -n "$LIGNES" "$FICHIER_SOURCE" > "$FIN"
+
+# On assemble le tout
+cat "$DEBUT" "$BLOC_IMAGES" "$FIN" > "$FICHIER_SOURCE"
+
+#message "Les images du bloc $DIRECTIVE ont été incorporées."
+
+}
+
+##########################################################
+### generation ###########################################
+# Génération des PDF papier et présentation
+
+generation()
+{
+
+# Des restrictions dans les sorties PDF ?
+if [[ -f "$EUFEMD/ATELIER/${ATELIER}/INI/out.ini" ]];then
+	# shellcheck source=/home/pi/eufemd/ATELIER/EXEMPLE/INI/out.ini
+	. "$EUFEMD/ATELIER/${ATELIER}/INI/out.ini"
+else
+	local PAPIER;local TROUEE;local BEAMER
+	PAPIER=true;TROUEE=true;BEAMER=true
+fi
+
+### Barre de progression & exécution de la génération
+### de documents...
+
+declare -a ACTIONS=( "md2pn --version C" 	"md2pn --version T" 	"md2beamer" )
+declare -a OPTIONS=( "PAPIER" 			"TROUEE" 		"BEAMER" )
+declare -a VALEURS=( "$PAPIER" 			"$TROUEE" 		"$BEAMER" )
+
+(
+local ITEMS
+ITEMS=3
+local ACCOMPLIS
+ACCOMPLIS=0
+local DOCUMENT
+local PCT
+
+while [[ $ACCOMPLIS -le $ITEMS ]];do
+	PCT=$(( ACCOMPLIS * 100 / ITEMS ))
+	DOCUMENT=$((ACCOMPLIS + 1))
+	echo "XXX"
+	if [[ $DOCUMENT -lt 4 ]];then
+		echo "Document $DOCUMENT"
+		echo "Option: ${OPTIONS[ACCOMPLIS]} ${VALEURS[ACCOMPLIS]}"
+		echo "Action: ${ACTIONS[ACCOMPLIS]}"
+	else
+		echo "Fin de la génération des documents"
+	fi
+	echo "XXX"
+	echo "$PCT"
+	if [[ $DOCUMENT -lt 4 ]] && [[ 
+${VALEURS[ACCOMPLIS]} = true ]];then
+		echo "${ACTIONS[ACCOMPLIS]}" >> "$LOG"
+		eval "${ACTIONS[ACCOMPLIS]}"
+	else
+		sleep 2
+	fi
+	ACCOMPLIS=$((ACCOMPLIS + 1))
+done
+) | dialog --title "Génération des documents" --gauge "Patientez..." 10 60 0
+
+}
+
+### edition ###############################################
+# Menu édition de l'atelier #
+#
+
+edition()
+{
+
+# On récupère les variables
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+# shellcheck source=/home/pi/eufemd/CONF/prefs.ini
+. "$EUFEMD/CONF/prefs.ini"
+
+# On teste l'existence du fichier source, sinon on le crée...
+local FICHIER_SOURCE
+FICHIER_SOURCE=$EUFEMD/ATELIER/${ATELIER}/SOURCE/source_${ATELIER}.md
+if ! [[ -f ${FICHIER_SOURCE} ]];then
+	message "Création de source_${ATELIER}.md" 1;touch ${FICHIER_SOURCE}
+fi 
+
+
+# Menu
+local TITRE
+TITRE="Menu Edition"
+local INVITE
+INVITE="Votre choix :"
+local OPTION
+OPTION=$(whiptail --title "$TITRE" --menu "$INVITE" 13 60 5 \
+"E" "(E)diter le fichier source" \
+"C" "Editer les (C)hamps des en-têtes" \
+"I" "Incorporer des (I)mages..." \
+"P" "Générer tous les (P)DF..." \
+"R" "(R)etour au menu principal" 3>&1 1>&2 2>&3)
+
+local exitstatus
+exitstatus=$?
+
+if [[ $exitstatus = 0 ]];then
+
+case $OPTION in
+	"E")
+	# Edition source
+	$EDITEUR ${FICHIER_SOURCE}
+	edition
+	;;
+	"C")
+	# Edition des champs des en-tetes
+	$EDITEUR "$EUFEMD/ATELIER/${ATELIER}/INI/champs.ini"
+	edition
+	;;
+	"P")
+	# Génération des PDF papier et présentation
+	generation
+	edition
+	;;
+	"I")
+	# Incorporation d'images
+	cherche_directive_image
+	edition
+	;;
+	"R")
+	main "$EUFEMD"
+	;;
+   esac
+
+else
+    echo "vous avez annulé ou quitté."
+fi
+
+}
+
+###########################################################
+### voir 
+# Affiche les PDF générés...
+
+voir()
+{
+
+# Variables...
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+# shellcheck source=/home/pi/eufemd/CONF/prefs.ini
+. "$EUFEMD/CONF/prefs.ini"
+
+local PDFS
+PDFS="$EUFEMD/ATELIER/${ATELIER}"
+
+# On vérifie l'existence de fichiers PDF
+find ${PDFS}/*.pdf -nowarn 1>/dev/null 2>&1
+if ! [[ $? -eq 0 ]];then
+	message "Aucun fichier PDF !"
+	return
+fi
+
+# On vérifie la visionneuse PDF
+if [[ -n $VISIONPDF ]] && [[ -f $VISIONPDF ]];then
+	for pdf in "${PDFS}"/*.pdf;do
+		"$VISIONPDF" --unique "$pdf" 2>/dev/null
+	done
+else
+	message "Erreur : aucune visionneuse PDF. Vérifiez vos préférences."
+	return
+fi
+
+}
+
+############################################################
+### publier 
+# Copie les fichiers PDF dans la FORGE déclarée
+# et le dossier de dépôt pour les impressions rapides
+# Ces chemins sont définis dans atelier.ini
+
+publier()
+{
+
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+local PDFS
+PDFS=$EUFEMD/ATELIER/${ATELIER}
+
+# On tâche de publier les PDF générés vers la forge actuelle
+# On vérifie l'existence de fichiers PDF
+find ${PDFS}/*.pdf -nowarn 1>/dev/null 2>&1
+if ! [[ $? -eq 0 ]];then
+	message "Erreur : aucun fichier PDF !"
+	return
+fi
+
+# Il y a des PDF : on peut continuer...
+
+if ! [[ -d ${FORGE}/${IMPRESSION} ]];then
+	mkdir -p "${FORGE}/${IMPRESSION}"
+fi
+
+local DEST
+DEST=${FORGE}/${NIVEAU}/${COURS}
+
+if ! [[ -d $DEST ]];then
+	mkdir -p "$DEST"
+fi
+
+cp -u $EUFEMD/ATELIER/${ATELIER}/*.pdf "${DEST}"
+cp -u $EUFEMD/ATELIER/${ATELIER}/prise_de_notes*.pdf "${FORGE}/${IMPRESSION}"
+
+message "Publication : les PDF ont été copiés dans ${DEST} ainsi qu'une copie des versions papier dans ${FORGE}/${IMPRESSION}"
+
+}
+
+############################################################
+### info_modele
+# Affiche l'information sur le modèle sélectionné
+# Paramètre
+# $1 : nom du modèle
+
+info_modele()
+{
+
+if [[ -z $1 ]];then
+	echo "Syntaxe : $0 [NOM_MODELE]";exit 1
+fi
+
+local MODELE
+MODELE=$1
+local DESCRIPTION
+DESCRIPTION=/usr/local/share/eufemd/AIDE/DESC_MODELES/${MODELE}/description.txt
+if [[ -f $DESCRIPTION ]];then
+	whiptail --title "Modèle : $1" --scrolltext --textbox "$DESCRIPTION" 20 80
+else
+	message "ERREUR : aucune description n'est disponible pour le modèle ${MODELE}."
+	return
+fi
+
+return 0
+
+}
+
+
+############################################################
+### liste_modeles
+# Affiche les descriptions des modèles
+
+liste_modeles()
+{
+
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+
+# On liste les modèles disponibles
+# Et on affiche l'aide associée
+
+for m in "${EUFEMD}/MODELES"/*.tar;do
+	local desc
+	desc="${m##*/}"
+	info_modele "${desc%.tar}"
+done
+
+}
+
+############################################################
+### apropos ################################################
+# Affiche des informations sur Eufemd et son modèle courant
+
+apropos()
+{
+
+# Variables
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+. "/usr/local/share/eufemd/VERSION"
+echo -e "EUFEMD - Chaîne éditoriale pédagogique en langage Markdown\nVersion $VERSION\n" > /tmp/INFO_EUFEMD
+echo -e "\nModèle courant :" >> /tmp/INFO_EUFEMD
+cat "$EUFEMD/ATELIER/${ATELIER}/description.txt" >> /tmp/INFO_EUFEMD
+
+whiptail --title "À propos..." \
+--scrolltext --textbox /tmp/INFO_EUFEMD 20 60
+
+}
+
+############################################################
+### aide
+# Affichage du menu de l'aide
+
+aide()
+{
+
+local CHEMIN
+CHEMIN="/usr/local/share/eufemd/AIDE"
+
+# Menu
+local TITRE
+TITRE="AIDE d'EUFEMD"
+local INVITE
+INVITE="Aide de la chaîne éditoriale EUFEMD"
+local OPTION
+OPTION=$(whiptail --title "$TITRE" --menu "$INVITE" 13 60 5 \
+"A" "À propos du modèle courant" \
+"G" "Généralité et usages courants" \
+"U" "Usages avancés" \
+"M" "Modèles : description des modèles disponibles" \
+"Q" "Quitter l'aide." 3>&1 1>&2 2>&3)
+
+local exitstatus
+exitstatus=$?
+if [[ $exitstatus = 0 ]];then
+
+case $OPTION in
+	"A")
+	apropos
+	aide
+	;;
+	"G")
+	xdg-open "$CHEMIN/LisezMoi.pdf" &
+	aide
+	;;
+	"U")
+	xdg-open "$CHEMIN/Usages_avances.pdf" &
+	aide
+	;;
+	"M")
+	liste_modeles
+	;;
+	"Q")
+	# shellcheck source=/home/pi/.eufemd.conf
+	. "$HOME/.eufemd.conf"
+	main "$EUFEMD"
+	;;
+esac
+else
+  echo "Vous avez annulé..."
+fi
+
+}
+
+###########################################################
+### archiver_ateliers_recents
+# Archivages des ateliers déposés dans le dossier RECENT
+
+archiver_ateliers_recents()
+{
+
+# On récupère les variables
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+
+# On déplace les archives TAR des ateliers récents vers la forge
+if [[ -z $FORGE ]];then
+	message "Erreur : la variable FORGE n'est pas configurée."
+	return
+fi
+
+if [[ -d $FORGE ]];then
+	# On préserve l'archive EXEMPLE.tar
+	if [[ -f $EUFEMD/RECENT/EXEMPLE.tar ]];then
+		mv "$EUFEMD/RECENT/EXEMPLE.tar" "$EUFEMD/RECENT/EXEMPLE.sauve"
+	fi
+	# On compte les archives tar dans RECENT :
+	nombre=$(find "$EUFEMD/RECENT/"*.tar|wc -l)
+	if [[ $nombre -eq 0 ]];then
+		message "Aucune nouvelle archive dans le dossier RECENT"
+		return
+	else
+	for arc in "${EUFEMD}/RECENT"/*.tar;do
+		mv "$arc" "$FORGE"/
+	done
+	local BASEFORGE
+	BASEFORGE="${FORGE##*/}"
+	message "Tous les ateliers récents (sauf EXEMPLE) ont été archivés dans $BASEFORGE"
+	fi
+	# On remet EXEMPLE dans son état initial
+	if [[ -f $EUFEMD/RECENT/EXEMPLE.sauve ]];then
+		mv "$EUFEMD/RECENT/EXEMPLE.sauve" "$EUFEMD/RECENT/EXEMPLE.tar"
+	fi
+else
+	message "Erreur: vérifiez le chemin de la forge : $FORGE"
+	return
+fi
+
+}
+
+###########################################################
+### sauve_modele
+
+sauve_modele()
+{
+
+# shellcheck source=/home/pi/.eufemd.conf
+. "$HOME/.eufemd.conf"
+# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+. "$EUFEMD/CONF/atelier.ini"
+# shellcheck source=/home/pi/eufemd/CONF/prefs.ini
+. "$EUFEMD/CONF/prefs.ini"
+
+message "Un modèle sera créé à partir de l'atelier actuel : $ATELIER..."
+
+local DOMAINE
+DOMAINE=$(whiptail --title "Description du modèle (1)" \
+--inputbox "Matière ou domaine ?" 10 60 "DOMAINE" 3>&1 1>&2 2>&3)
+
+local ACTIVITE
+ACTIVITE=$(whiptail --title "Description du modèle (2)" \
+--inputbox "Activité (cours, méthode, évaluation) ?" 10 60 "ACTIVITE" 3>&1 1>&2 2>&3)
+
+cp --recursive "$EUFEMD/ATELIER/$ATELIER" "$EUFEMD/ATELIER/${ACTIVITE}_${DOMAINE}"
+mv "$EUFEMD/ATELIER/${ACTIVITE}_${DOMAINE}/SOURCE/source_${ATELIER}.md" "$EUFEMD/ATELIER/${ACTIVITE}_${DOMAINE}/SOURCE/source_${ACTIVITE}_${DOMAINE}.md"
+
+if (whiptail --title "Personnalisation" \
+--yesno "Voulez-vous personnaliser le fichier source de ce modèle ?" 10 60);then
+	$EDITEUR "$EUFEMD/ATELIER/${ACTIVITE}_${DOMAINE}/SOURCE/source_${ACTIVITE}_${DOMAINE}.md"
+fi
+
+# On fait le ménage avant de créer l'archive du modèle
+find "$EUFEMD/ATELIER/${ACTIVITE}_${DOMAINE}"/*.pdf -nowarn 1>/dev/null 2>&1
+if [[ $? -eq 0 ]];then
+	rm "$EUFEMD/ATELIER/${ACTIVITE}_${DOMAINE}"/*.pdf
+fi
+
+# On crée ou on actualise l'archive dans le dossier des modèles
+local ACTION
+
+if [[ -f "$EUFEMD/MODELES/${ACTIVITE}_${DOMAINE}.tar" ]];then
+	tar uvf "$EUFEMD/MODELES/${ACTIVITE}_${DOMAINE}.tar" "$EUFEMD/ATELIER/${ACTIVITE}_${DOMAINE}" 
+	ACTION='mis à jour'
+else
+	tar cvf "$EUFEMD/MODELES/${ACTIVITE}_${DOMAINE}.tar" "$EUFEMD/ATELIER/${ACTIVITE}_${DOMAINE}" 
+	ACTION='créé'
+fi
+
+# On crée ou on met à jour la description :
+if ! [[ -d $EUFEMD/AIDE/DESC_MODELES/${ACTIVITE}_${DOMAINE} ]];then
+	mkdir "$EUFEMD/AIDE/DESC_MODELES/${ACTIVITE}_${DOMAINE}"
+fi
+cp -u "$EUFEMD/ATELIER/${ACTIVITE}_${DOMAINE}/description.txt" "$EUFEMD/AIDE/DESC_MODELES/${ACTIVITE}_${DOMAINE}"
+
+# On fait le ménage dans ATELIER
+rm -R "$EUFEMD/ATELIER/${ACTIVITE}_${DOMAINE}"
+
+message "Le modèle ${ACTIVITE}_${DOMAINE} a été ${ACTION}."
+
+}
+
+### Fin des fonctions secondaires ##########################
+
+
+### Fonction principale ####################################
+
+main()
+{
+
+local EUFEMD
+EUFEMD="$1"
+# shellcheck source=/home/pi/eufemd/CONF/prefs.ini
+. "$EUFEMD/CONF/prefs.ini"
+
+# Menu
+local TITRE
+TITRE="EUFEMD"
+local INVITE
+INVITE="Votre choix :"
+local OPTION
+OPTION=$(whiptail --title "$TITRE" --menu "$INVITE" 17 60 9 \
+"C" "Propriétés de l'atelier (C)ourant" \
+"E" "(E)diter cet atelier" \
+"V" "(V)isionneuse PDF" \
+"P" "(P)ublier les PDF" \
+"F" "Pré(F)érences..." \
+"A" "(A)ide..." \
+"R" "Archiver les ateliers (R)écents" \
+"M" "Archiver l'atelier courant comme un (M)odèle" \
+"Q" "(Q)uitter" 3>&1 1>&2 2>&3)
+
+local exitstatus=$?
+
+if [[ $exitstatus = 0 ]];then
+    case $OPTION in
+	"C")
+	# On récupère le nom de l'atelier courant
+	# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+	. "$EUFEMD/CONF/atelier.ini"
+        local COURANT
+	COURANT="$ATELIER"
+
+	# On  édite et on vérifie l'intégrité des propriétés de l'atelier
+        proprietes_atelier
+
+	# Si cet atelier n'existe pas encore, on le crée, après avoir archivé 
+	# l'atelier courant...
+	if ! [[ -d "$EUFEMD/ATELIER/$ATELIER" ]];then 
+		sauve_atelier_courant "$COURANT"
+		creation_atelier "$ATELIER"
+	fi
+	main "$EUFEMD"
+	;;
+	"E")
+	edition
+	;;
+	"V")
+	voir
+	main "$EUFEMD"
+	;;
+	"P")
+	publier
+	main "$EUFEMD"
+	;;
+	"F")
+	"$EDITEUR" "$EUFEMD/CONF/prefs.ini"
+	main "$EUFEMD"
+	;;
+	"A")
+	clear
+	aide
+	main "$EUFEMD"
+	;;
+	"R")
+	archiver_ateliers_recents
+	main "$EUFEMD"
+	;;
+	"M")
+	sauve_modele
+	main "$EUFEMD"
+	;;
+	"Q")
+	clear && exit 0 
+	;;
+   esac
+
+else
+    echo "vous avez annulé."
+fi
+
+}
+
+################ Fin des fonctions #######################
+
+# Message de bienvenue
+message "EUFEMD... La chaîne éditoriale pédagogique en langage Markdown"
+
+initialise_home_eufemd
+if [[ $? -eq 0 ]];then
+	# shellcheck source=/home/pi/.eufemd.conf
+	. "$HOME/.eufemd.conf"
+	main "$EUFEMD"
+fi
+

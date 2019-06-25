@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Les dépendances de logiciels sont maintenant gérées par le fichier control
+# dans le dossier DEBIAN
+
+
+### coloration_md #########################################
+# Il reste à installer la coloration syntaxique du markdown
+# pour l'éditeur nano...
+
+function coloration_md
+{
+COLORATIONMD="/usr/share/nano/markdown.nanorc"
+if ! test -f "$COLORATIONMD"
+then
+	echo "La coloration syntaxique du langage Markdown n'est pas encore présente."
+	cd ${COLORATIONMD%/markdown.nanorc}
+	wget "https://raw.githubusercontent.com/stylersnico/nanorc/master/markdown.nanorc"
+	# Appel récursif
+	coloration_md
+else
+	echo "La coloration syntaxique du markdown pour nano est maintenant présente."
+fi
+}
+
+coloration_md
+

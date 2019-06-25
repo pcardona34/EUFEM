@@ -1,0 +1,34 @@
++ Modèle : CORPUS_POESIE
++ Activité : Lecture complémentaire
++ Matière : Littérature
+
+# Sortie(s) générée(s) :
+
++ Un corpus de poèmes (PDF papier, A4) 
+
+# Champs spécifiques :
+
+| Champ        | Valeur                             |
+| ------------ | ---------------------------------- |
+| OBJET_COURT  | Objet d'étude abrégé (POÉSIE)      |
+| NUM_SEQUENCE | Numéro de la séquence              |
+| ACTIVITE     | Description de l'activité          |
+| TITRE        | Contenu facultatif                 |
+
+# Balises spécifiques
+
+@MESURE(...)MESURE@	# Indique la longueur de la mesure à partir d'un vers échantillon
+@TITRE(...)TITRE@	# Titre du poème
+@CHAPO(...)CHAPO@	# Chapô
+@POEME(...)POEME@	# Ensemble du poème
+@STROPHE(...)STROPHE@	# Strophe
+@VERS ...		# Début de vers
+@INDENTE ...		# Vers indenté
+
+Voir l'exemple proposé dans le fichier source du modèle
+
+# Remarque
+
+Ce modèle ne permet pas d'insérer des notes de fin de texte ou de bas de page. Je 
+ne suis pas parvenu à déterminer s'il s'agit d'un bogue dans Poemscol ou dans 
+Eufemd.

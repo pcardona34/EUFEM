@@ -1,0 +1,9 @@
+Package: eufemd
+Version: 1.0.0
+Section: base
+Priority: optional
+Architecture: all
+Depends: bash, dialog, nano, pandoc, texlive-latex-recommended, texlive-latex-extra, texlive-humanities, texlive-lang-french
+Maintainer: Patrick Cardona <patrick.cardona@laposte.net>
+Description: Ecrire une fois en Markdown (petite chaîne éditoriale pédagogique)
+Homepage: https://github.com/pcardona34/eufemd

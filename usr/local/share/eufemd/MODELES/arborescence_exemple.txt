@@ -1,0 +1,16 @@
+# arborescence de modele
+
+EXEMPLE/
+EXEMPLE/description.txt
+EXEMPLE/INI/
+EXEMPLE/INI/champs.ini
+EXEMPLE/INI/out.ini
+EXEMPLE/SED/
+EXEMPLE/SED/beamer.sed
+EXEMPLE/SED/pn_complete.sed
+EXEMPLE/SED/pn_sans_images.sed
+EXEMPLE/SED/pn_trouee.sed
+EXEMPLE/SOURCE/
+EXEMPLE/SOURCE/source_EXEMPLE.md
+EXEMPLE/TEX/
+EXEMPLE/TEX/citation.tex

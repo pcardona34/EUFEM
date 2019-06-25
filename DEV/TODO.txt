@@ -1,4 +1,0 @@
-Encore à faire :
-
-+ Modèles pédagogiques : étude de la langue
-+ Améliorer les templates : utilisation de Yaml, pandoc-mustache
