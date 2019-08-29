@@ -1089,7 +1089,8 @@ fi
 # On vérifie la visionneuse PDF
 if [[ -n $VISIONPDF ]] && [[ -f $VISIONPDF ]];then
 	for pdf in "${PDFS}"/*.pdf;do
-		"$VISIONPDF" --unique "$pdf" 2>/dev/null
+#		"$VISIONPDF" --unique "$pdf" 2>/dev/null
+		"$VISIONPDF" "$pdf" 2>/dev/null
 	done
 else
 	message "Erreur : aucune visionneuse PDF. Vérifiez vos préférences."
