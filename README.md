@@ -9,6 +9,8 @@ prise de notes trouée...) au format PDF.
 
 + Installez si nécessaire les **dépendances** de 'eufemd' :
 
+		sudo apt-get install dialog
+		sudo apt-get install nano
 		sudo apt-get install pandoc
 		sudo apt-get install texlive-latex-recommended 
 		sudo apt-get install texlive-latex-extra
