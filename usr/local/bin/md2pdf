@@ -1,0 +1,229 @@
+#!/bin/bash
+
+### md2pdf : version allégée de eufemd en ligne de commande
+#
+# MIT License
+#
+# Copyright (c) 2019 Patrick CARDONA
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
+###########################################################
+### Fonctions de génération des documents #################
+###########################################################
+
+### entete_presentation ###################################
+# Génère l'en-tête de la présentation
+
+conf()
+{
+
+if [[ ! -f $HOME/.m2pdf.conf ]];then
+	echo "# Variables par défaut de md2pdf" >"$HOME/.md2pdf.conf"
+	{
+	echo "TITRE=\"MON TITRE\""
+	echo "ACTIVITE=\"MON ACTIVITE\""
+	echo "AUTEUR=\"MOI\""
+	echo "MATIERE=\"MA MATIERE\""
+	} >>"$HOME/.md2pdf.conf"
+fi
+
+}
+
+entete_presentation()
+{
+
+# On récupère les variables
+. "$HOME/.md2pdf.conf"
+
+# Nom du fichier d'en-tête de la présentation
+local CIBLE
+CIBLE=/tmp/ENTETE_PRESENTATION.md
+
+# On écrit l'en-tête
+local DATE
+DATE=$(date +"%d %b %Y")
+
+printf "%% %s \n%% %s \n%% %s\n\n" "$TITRE" "$ACTIVITE" "$DATE" > "$CIBLE"
+
+return 0
+}
+
+### entete_papier #########################################
+# Génère l'en-tête papier du document courant
+# $1 : paquet TeX supplémentaire : LINENO, etc.
+
+entete_papier()
+{
+
+# On récupère les variables
+. "$HOME/.md2pdf.conf"
+
+# Chemin du fichier d'en-tête PAPIER
+local CIBLE
+CIBLE=/tmp/ENTETE_PAPIER.md
+
+# On écrit l'en-tête du header Fancy de LaTeX
+
+
+echo "---" > "$CIBLE"
+{
+echo "header-includes: |"
+echo "    \\usepackage{lastpage}"
+echo "    \\usepackage{fancyhdr}"
+echo "    \\pagestyle{fancy}"
+echo "    \\lhead{\\textbf{${AUTEUR} - ${MATIERE}}}"
+echo "    \\chead{}"
+echo "    \\rhead{\\textbf{${ACTIVITE} - \\textit{${TITRE}}}}"
+echo "    \\lfoot{}"
+echo "    \\cfoot{\\thepage~/~\\pageref{LastPage}}"
+echo "    \\rfoot{}"
+echo "---"
+} >> "$CIBLE"
+
+# On écrit le titre sur le haut de la première page
+
+echo -e "\n# ${ACTIVITE} : _${TITRE}_ \n" >> "$CIBLE"
+# Fin de écriture en-tête
+
+return 0
+
+}
+
+### md2pn #################################################
+# Génère les versions papier 
+
+md2pn()
+{
+
+local IN
+IN=$1
+local SED
+SED=/usr/local/share/eufemd/SED/pn_complete.sed
+local FIL
+FIL=$(tempfile)
+
+
+# On teste la présence de balises comme "---"
+grep --quiet -e "---" "$1"
+if [[ $? -eq 0 ]] && [[ -f $SED ]];then
+	echo "Nettoyage des balises de présentation..."
+	sed -f "$SED" "$IN" >"$FIL"
+else
+	cp "$IN" "$FIL"
+fi
+
+local ET
+ET=/tmp/ENTETE_PAPIER.md
+
+# On (ré)génère l'en-tête PAPIER
+conf
+entete_papier
+
+if ! [[ -f "$ET" ]];then
+	echo "Une erreur est survenue dans la génération de l'en-tête papier.";sleep 5
+	return
+fi
+
+local OUT
+OUT=./${1%*.md}_papier.pdf
+
+echo "Version papier..."
+pandoc -s -V papersize:a4 -V geometry:margin=2.5cm "$ET" "$FIL" -o "$OUT"
+
+return 0
+
+}
+
+##########################################################
+### md2beamer ############################################
+# Génère la présentation
+
+md2beamer()
+{
+
+# On récupère les variables
+. "$HOME/.md2pdf.conf"
+
+local IN
+IN=$1
+local ET
+ET=/tmp/ENTETE_PRESENTATION.md
+
+# On génère puis on ajoute l'en-tête...
+conf
+entete_presentation
+
+echo "Présentation au format Beamer / PDF..."
+pandoc -s -t beamer --slide-level 2 -V theme:Boadilla $ET $IN -o "${1%*.md}_presentation.pdf"
+
+}
+
+visionneuse(){
+
+if [[ $TERM == 'xterm' ]];then
+	VOIR='qpdfview'
+else
+	VOIR='mcview'
+fi
+
+for f in ./*.pdf
+do
+	if [[ -f $f ]];then
+		 eval "$VOIR $f 2>/dev/null"
+	fi
+done
+
+}
+
+
+### Fin des fonctions secondaires ##########################
+
+conf
+
+if [[ -z $1 ]];then
+	echo "Usages :"
+	echo -e "\n${0##*/} <fichier_source>.md"
+	echo -e "\tGénère un document papier et une présentation simple." 
+	echo -e "\n${0##*/} --config"
+	echo -e "${0##*/} -c"
+	echo -e "\tPermet de personnaliser les champs, en éditant le fichier $HOME/.md2pdf.conf"
+	echo -e "\n${0##*/} --voir-pdf"
+	echo -e "${0##*/} -v"
+	echo -e "\tPermet de visualiser les PDF générés."
+	exit 1
+else
+	if [[ $1 = '--config' ]] || [[ $1 = '-c' ]];then
+		nano "$HOME/.md2pdf.conf"
+		exit 0
+	elif [[ $1 = '--voir-pdf' ]] || [[ $1 = '-v' ]];then
+		visionneuse
+		exit 0
+	else
+		TITRE=${1%*.md}
+		FIC=$1
+		echo "Génération 1/2 en cours... Veuillez patienter."
+		md2pn "$FIC"
+		echo "50 % accomplis."
+		echo "Génération 2/2 en cours... Veuillez patienter." 
+		md2beamer "$FIC"
+		echo "100 % accomplis."
+	fi
+fi

@@ -41,3 +41,19 @@ un terminal, saisissez la commande :
 + Pour en savoir plus, consultez l'aide intégrée : 
 
 		menu / (A)ide / (G)énéralités... 
+
+# md2pdf : la version CLI allégée de eufemd 
+
++ À partir de la version 1.0.3, vous disposez d'une version allégée de eufemd en ligne de commande :
+
+		md2pdf
+
++ Contrairement à 'eufemd', 'md2pdf' ne gère pas les ateliers ni les fichiers sources complexes. Il produit seulement deux formats de sortie :
+
+   + Un format papier (pdf A4 portrait)
+   + Une présentation (format beamer : pdf)
+
++ En revanche, il permet de travailler dans le répertoire courant et d'y convertir un fichier '.md' fourni en argument.
+
++ Si vous exécutez 'md2pdf' sans argument, une aide succincte sera affichée.
+
