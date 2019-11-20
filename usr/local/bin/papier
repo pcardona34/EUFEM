@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ### md2pdf : version allégée de eufemd en ligne de commande
-#
+### papier : version simplifiée
 # MIT License
 #
 # Copyright (c) 2019 Patrick CARDONA
@@ -49,35 +49,6 @@ fi
 
 }
 
-entete_presentation()
-{
-
-# On récupère les variables
-. "$HOME/.md2pdf.conf"
-
-# Nom du fichier d'en-tête de la présentation
-local CIBLE
-CIBLE=/tmp/ENTETE_PRESENTATION.md
-
-# On écrit l'en-tête
-local DATE
-DATE=$(date +"%d %b %Y")
-
-printf "%% %s \n%% %s \n%% %s\n\n" "$TITRE" "$ACTIVITE en ${NIVEAU}^e^" "$DATE" > "$CIBLE"
-
-echo "---" >> "$CIBLE"
-{
-echo "header-includes: |"
-echo "	\\usepackage{colortbl}"
-echo "	\\let\\oldemph\\emph"
-echo "	\\renewcommand\\emph[1]{{\\color{blue}\\oldemph{#1}}}"
-echo "	\\let\\oldtextbf\\textbf"
-echo "	\\renewcommand\\textbf[1]{{\\color{blue}\\oldtextbf{#1}}}"
-} >> "$CIBLE"
-echo "---" >> "$CIBLE"
-
-return 0
-}
 
 ### entete_papier #########################################
 # Génère l'en-tête papier du document courant
@@ -100,6 +71,8 @@ echo "---" > "$CIBLE"
 {
 echo "header-includes: |"
 echo "	\\usepackage{colortbl}"
+echo "	\\usepackage{qtree}"
+echo "  \\usepackage{tikz}"
 echo "	\\usepackage{lastpage}"
 echo "	\\usepackage{fancyhdr}"
 echo "	\\pagestyle{fancy}"
@@ -132,9 +105,8 @@ IN=$1
 local SED
 SED=/usr/local/share/eufemd/SED/pn_complete.sed
 # Chemin pour débogage seulement : à commenter
-if [[ $0 == '/home/pi/Projets/eufemd/usr/local/bin/md2pdf' ]] || [[ $0 == './md2pdf' ]];then
-	SED=/home/pi/Projets/eufemd/usr/local/share/eufemd/SED/pn_complete.sed
-fi
+#SED=/home/pi/Projets/eufemd/usr/local/share/eufemd/SED/pn_complete.sed
+
 local FIL
 FIL=$(tempfile)
 
@@ -165,32 +137,10 @@ OUT=./${1%*.md}_papier.pdf
 
 echo "Version papier..."
 pandoc -s -V papersize:a4 -V geometry:margin=2.5cm "$ET" "$FIL" -o "$OUT" --from markdown --latex-engine=lualatex
+#pandoc -s -V papersize:a4 -V geometry:margin=2.5cm "$ET" "$FIL" -o "$OUT" --from markdown --latex-engine=pdflatex
+
 
 return 0
-
-}
-
-##########################################################
-### md2beamer ############################################
-# Génère la présentation
-
-md2beamer()
-{
-
-# On récupère les variables
-. "$HOME/.md2pdf.conf"
-
-local IN
-IN=$1
-local ET
-ET=/tmp/ENTETE_PRESENTATION.md
-
-# On génère puis on ajoute l'en-tête...
-conf
-entete_presentation
-
-echo "Présentation au format Beamer / PDF..."
-pandoc -s -t beamer --slide-level 2 -V theme:$THEME $ET $IN -o "${1%*.md}_presentation.pdf"
 
 }
 
@@ -202,7 +152,7 @@ else
 	VOIR='mcview'
 fi
 
-for f in ./*.pdf
+for f in ./*_papier.pdf
 do
 	if [[ -f $f ]];then
 		 eval "$VOIR $f 2>/dev/null"
@@ -219,13 +169,13 @@ conf
 if [[ -z $1 ]];then
 	echo "Usages :"
 	echo -e "\n${0##*/} <fichier_source>.md"
-	echo -e "\tGénère un document papier et une présentation simple." 
+	echo -e "\tGénère un document papier." 
 	echo -e "\n${0##*/} --config"
 	echo -e "${0##*/} -c"
 	echo -e "\tPermet de personnaliser les champs, en éditant le fichier $HOME/.md2pdf.conf"
 	echo -e "\n${0##*/} --voir-pdf"
 	echo -e "${0##*/} -v"
-	echo -e "\tPermet de visualiser les PDF générés."
+	echo -e "\tPermet de visualiser le PDF généré."
 	exit 1
 else
 	if [[ $1 = '--config' ]] || [[ $1 = '-c' ]];then
@@ -237,11 +187,9 @@ else
 	else
 		TITRE=${1%*.md}
 		FIC=$1
-		echo "Génération 1/2 en cours... Veuillez patienter."
+		echo "Génération en cours... Veuillez patienter."
+		nano "$HOME/.md2pdf.conf"
 		md2pn "$FIC"
-		echo "50 % accomplis."
-		echo "Génération 2/2 en cours... Veuillez patienter." 
-		md2beamer "$FIC"
 		echo "100 % accomplis."
 	fi
 fi

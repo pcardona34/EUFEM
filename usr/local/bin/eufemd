@@ -214,11 +214,29 @@ else
 	cd "$ACTUEL" || exit 1 
 fi
 
-# On fait le ménage dans ATELIER
-rm -R "$EUFEMD/ATELIER/$COURANT"
-#rm -R "$EUFEMD/IMG" && mkdir -p "$EUFEMD/IMG"
-
 message "L'archive de l'atelier ${COURANT} a été ${ACTION}."
+
+}
+
+#########################################################
+### menage_atelier ######################################
+# Nettoie le dossier de l'atelier 
+# Paramètre :
+# $1 : nom du dossier COURANT dans ATELIER
+
+menage_atelier()
+{
+
+local COURANT
+COURANT=$1
+
+if [[ -d $EUFEMD/ATELIER/$COURANT ]];then
+	# On fait le ménage dans ATELIER
+	rm -R "$EUFEMD/ATELIER/$COURANT"
+else
+	message "ERREUR !\nLe dossier $COURANT a été supprimé."
+	exit 1
+fi
 
 }
 
@@ -581,7 +599,9 @@ if [[ -n $MODELE ]];then
 	printf "%% BTS-%s - %s de %s \n%% %s (%s) \n%% %s\n\n" "$NIVEAU_BTS" "$ACTIVITE" "$MATIERE" "$THEME" "$NUM_PARTIE" "${DATE}" > "$CIBLE"
 	;;
 	*)
-	printf "%% %s \n%% %s \n%% %s\n\n" "$TITRE" "$ACTIVITE" "$DATE" > "$CIBLE"
+	# On adapte 
+	printf "%% %s \n%% %s \n%% %s  \n\n" "$TITRE" "zzz" "Activité: $ACTIVITE --- $AUTEUR --- Mise à jour : $DATE" > "$CIBLE"
+	#printf "%% %s \n%% %s \n%% %s\n\n" "$TITRE" "$ACTIVITE" "$DATE" > "$CIBLE"
 	esac
 fi
 
@@ -855,7 +875,8 @@ else
 fi
 
 #echo -e "\n Génération de la présentation au format Beamer / PDF..."
-pandoc -s -t beamer --slide-level 2 -V theme:Boadilla -H $TEX/citation.tex /tmp/pret.md -o "$EUFEMD/ATELIER/$ATELIER/presentation_${ATELIER}.pdf"
+#pandoc -s -t beamer --slide-level 2 -V theme:Boadilla -H $TEX/citation.tex /tmp/pret.md -o "$EUFEMD/ATELIER/$ATELIER/presentation_${ATELIER}.pdf"
+pandoc -s -t beamer --slide-level 2 -V theme:"$MON_THEME" -H $TEX/citation.tex /tmp/pret.md -o "$EUFEMD/ATELIER/$ATELIER/presentation_${ATELIER}.pdf"
 
 # On rétablit le fichier source sans les blocs images
 if [[ -f $IN.SAUVE ]];then
@@ -1398,13 +1419,14 @@ TITRE="EUFEMD"
 local INVITE
 INVITE="Votre choix :"
 local OPTION
-OPTION=$(whiptail --title "$TITRE" --menu "$INVITE" 17 60 9 \
+OPTION=$(whiptail --title "$TITRE" --menu "$INVITE" 18 60 10 \
 "C" "Propriétés de l'atelier (C)ourant" \
 "E" "(E)diter cet atelier" \
 "V" "(V)isionneuse PDF" \
 "P" "(P)ublier les PDF" \
 "F" "Pré(F)érences..." \
 "A" "(A)ide..." \
+"S" "(S)auvegarder l'atelier courant." \
 "R" "Archiver les ateliers (R)écents" \
 "M" "Archiver l'atelier courant comme un (M)odèle" \
 "Q" "(Q)uitter" 3>&1 1>&2 2>&3)
@@ -1427,6 +1449,7 @@ if [[ $exitstatus = 0 ]];then
 	# l'atelier courant...
 	if ! [[ -d "$EUFEMD/ATELIER/$ATELIER" ]];then 
 		sauve_atelier_courant "$COURANT"
+		menage_atelier "$COURANT"
 		creation_atelier "$ATELIER"
 	fi
 	main "$EUFEMD"
@@ -1449,6 +1472,16 @@ if [[ $exitstatus = 0 ]];then
 	"A")
 	clear
 	aide
+	main "$EUFEMD"
+	;;
+	"S")
+	# On récupère le nom de l'atelier courant
+	# shellcheck source=/home/pi/eufemd/CONF/atelier.ini
+	. "$EUFEMD/CONF/atelier.ini"
+        local COURANT
+	COURANT="$ATELIER"
+	# l'atelier courant...
+	sauve_atelier_courant "$COURANT"
 	main "$EUFEMD"
 	;;
 	"R")
