@@ -97,13 +97,15 @@ local IN
 IN=$1
 local ET
 ET=/tmp/ENTETE_PRESENTATION.md
+local TEX
+TEX=/usr/local/share/eufemd/TEX
 
 # On génère puis on ajoute l'en-tête...
 conf
 entete_presentation
 
 echo "Présentation au format Beamer / PDF..."
-pandoc -s -t beamer --slide-level 2 -V theme:$THEME $ET $IN -o "${1%*.md}_presentation.pdf"
+pandoc -s -t beamer --slide-level 2 -H $TEX/citation.tex -V theme:$THEME $ET $IN -o "${1%*.md}_presentation.pdf"
 
 }
 

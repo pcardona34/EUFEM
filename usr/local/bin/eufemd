@@ -599,8 +599,8 @@ if [[ -n $MODELE ]];then
 	printf "%% BTS-%s - %s de %s \n%% %s (%s) \n%% %s\n\n" "$NIVEAU_BTS" "$ACTIVITE" "$MATIERE" "$THEME" "$NUM_PARTIE" "${DATE}" > "$CIBLE"
 	;;
 	*)
-	# On adapte 
-	printf "%% %s \n%% %s \n%% %s  \n\n" "$TITRE" "zzz" "Activité: $ACTIVITE --- $AUTEUR --- Mise à jour : $DATE" > "$CIBLE"
+	# On adapte au thème focus 
+	printf "%% %s \n%% %s \n%% %s  \n\n" "$TITRE" "zzz" "$ACTIVITE --- ${AUTEUR} --- Mise à jour : $DATE" > "$CIBLE"
 	#printf "%% %s \n%% %s \n%% %s\n\n" "$TITRE" "$ACTIVITE" "$DATE" > "$CIBLE"
 	esac
 fi
@@ -876,7 +876,8 @@ fi
 
 #echo -e "\n Génération de la présentation au format Beamer / PDF..."
 #pandoc -s -t beamer --slide-level 2 -V theme:Boadilla -H $TEX/citation.tex /tmp/pret.md -o "$EUFEMD/ATELIER/$ATELIER/presentation_${ATELIER}.pdf"
-pandoc -s -t beamer --slide-level 2 -V theme:"$MON_THEME" -H $TEX/citation.tex /tmp/pret.md -o "$EUFEMD/ATELIER/$ATELIER/presentation_${ATELIER}.pdf"
+#pandoc -s -t beamer --slide-level 2 -V theme:"$MON_THEME" -H $TEX/citation.tex /tmp/pret.md -o "$EUFEMD/ATELIER/$ATELIER/presentation_${ATELIER}.pdf"
+pandoc -s -t beamer --slide-level 2 -H $TEX/citation.tex -V theme:"$MON_THEME" /tmp/pret.md -o "$EUFEMD/ATELIER/$ATELIER/presentation_${ATELIER}.pdf"
 
 # On rétablit le fichier source sans les blocs images
 if [[ -f $IN.SAUVE ]];then

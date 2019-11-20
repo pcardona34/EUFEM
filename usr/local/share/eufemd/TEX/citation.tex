@@ -1,0 +1,9 @@
+\usepackage{framed}
+\definecolor{bleuroi}{RGB}{49,140,231}
+\let\oldquote=\quote
+\let\endoldquote=\endquote
+\renewenvironment{quote}{\begin{framed}\begin{oldquote}\color{bleuroi}}{\end{oldquote}\end{framed}}
+\let\oldemph\emph
+\renewcommand\emph[1]{{\color{bleuroi}\oldemph{#1}}}
+
+

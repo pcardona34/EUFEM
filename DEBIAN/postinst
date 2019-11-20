@@ -8,7 +8,7 @@
 # Il reste à installer la coloration syntaxique du markdown
 # pour l'éditeur nano...
 
-function coloration_md
+function coloration_md()
 {
 COLORATIONMD="/usr/share/nano/markdown.nanorc"
 if ! test -f "$COLORATIONMD"
@@ -23,5 +23,42 @@ else
 fi
 }
 
+### Installation du thème focus de beamer ###
+
+function installe_theme()
+{
+
+THEME=$1
+CIBLE=/usr/local/share/texmf/tex/latex/beamer/themes
+
+if [[ ! -d $CIBLE ]];then
+	mkdir -p $CIBLE
+fi
+
+echo "Installation du thème Beamer : ${THEME}..."
+
+if [[ -f /usr/local/share/eufemd/THEMES/theme_${THEME}.tar.gz ]];then
+	cp /usr/local/share/eufemd/THEMES/theme_${THEME}.tar.gz $CIBLE/
+	cd $CIBLE || exit 1
+	gunzip theme_${THEME}.tar.gz
+	tar xvf theme_${THEME}.tar
+	sudo texhash
+	# Ménage
+	if [[ -f $CIBLE/theme_${THEME}.tar ]];then
+		sudo rm $CIBLE/theme_${THEME}.tar
+	fi
+	echo "Thème ${THEME} installé."
+else
+	echo "Echec: le thème n'est pas installé."
+fi
+
+}
+
+### On installe la coloration syntaxique pour nano
+
 coloration_md
+
+### On installe le thème focus pour beamer
+
+installe_theme "focus"
 
