@@ -30,7 +30,13 @@ console mcview
 
 		sudo dpkg -i eufemd.deb
 
+## Installation personnalisée
 
+Si vous modifiez *eufemd* avant de l'installer, vous pouvez ensuite procéder ainsi :
+
+		make
+		make install
+		
 # Lancement rapide
 
 + Pour démarrer la chaîne éditoriale EUFEMD, dans la console ou dans 
@@ -57,3 +63,13 @@ un terminal, saisissez la commande :
 
 + Si vous exécutez 'md2pdf' sans argument, une aide succincte sera affichée.
 
+Il existe deux commandes simplifiées de *md2pdf* :
+
++ **Beamer** : permet de générer une présentation au format LaTeX-Beamer.
+
+		beamer fichier_source.md
+		
++ **Papier** : permet de générer un document PDF au format A4-portrait.
+
+		papier fichier_source.md
+		
